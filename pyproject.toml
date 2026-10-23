@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "assistant-posture"
+dynamic = ["version"]
+description = "Assistant de posture : detection webcam en arriere-plan et signalement discret (Windows)"
+requires-python = ">=3.9,<3.13"
+dependencies = [
+    "opencv-python>=4.8",
+    "mediapipe==0.10.21",  # les versions suivantes ont retire mp.solutions
+    "pystray>=0.19",
+    "Pillow>=10",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pyinstaller>=6"]
+
+[project.gui-scripts]
+assistant-posture = "posture.__main__:main"
+
+[tool.setuptools]
+packages = ["posture"]
+
+[tool.setuptools.package-data]
+posture = ["index.html"]
+
+[tool.setuptools.dynamic]
+version = { attr = "posture.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

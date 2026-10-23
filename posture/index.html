@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistant de posture</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #fff; --text: #1d2330; --muted: #667085; --border: #e3e6eb; --track: #eceef2;
+    --ok: #1f9d55; --warn: #c98a12; --alert: #e0782b; --idle: #98a2b3; --accent: #3b5bdb; --amber: #f0a030;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #98a2b3; --border: #2a2f37; --track: #262b33; --accent: #748ffc; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 48px; display: grid; gap: 16px; grid-template-columns: 1.25fr 1fr; align-items: start; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  .col { display: grid; gap: 16px; }
+  header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  header h1 { font-size: 19px; margin: 0; font-weight: 650; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 4px; font-weight: 600; display: flex; justify-content: space-between; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+
+  /* État */
+  .status { display: flex; align-items: center; gap: 16px; }
+  .status .dot { width: 44px; height: 44px; border-radius: 50%; background: var(--idle); flex: none; position: relative; transition: background .4s; }
+  .status .dot::after { content: ""; position: absolute; inset: 15px; border-radius: 50%; background: var(--card); opacity: .9; }
+  .status[data-tone=ok] .dot { background: var(--ok); }
+  .status[data-tone=warn] .dot { background: var(--warn); }
+  .status[data-tone=alert] .dot { background: var(--alert); animation: pulse 3s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .5; } }
+  .status strong { display: block; font-size: 20px; font-weight: 650; }
+  .status span { color: var(--muted); font-size: 14px; }
+
+  .gauges { display: grid; gap: 14px; margin-top: 20px; }
+  .gauge-head { display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; }
+  .gauge-head output { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+  .track { position: relative; height: 8px; margin-top: 6px; border-radius: 4px; background: var(--track); overflow: hidden; }
+  .track .fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 4px; background: var(--ok); transition: width .4s, background .4s; }
+  .track .mark { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: var(--muted); opacity: .6; }
+  .gauge.over .fill { background: var(--amber); }
+  .gauge.off { opacity: .4; }
+  .gauges small { color: var(--muted); font-size: 12px; }
+
+  .actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+  button { font: inherit; border-radius: 10px; padding: 9px 16px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--muted); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+  button.ghost { border-color: transparent; color: var(--muted); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  details summary { cursor: pointer; font-weight: 500; list-style: none; display: flex; justify-content: space-between; }
+  details summary::after { content: "Afficher"; color: var(--accent); font-weight: 400; font-size: 14px; }
+  details[open] summary::after { content: "Masquer"; }
+  .video { margin-top: 14px; aspect-ratio: 4 / 3; border-radius: 10px; background: #0b0d10; overflow: hidden; display: grid; place-items: center; color: #98a2b3; }
+  .video > * { grid-area: 1 / 1; }
+  .video img { width: 100%; height: 100%; object-fit: cover; }
+  .video p { margin: 0; }
+
+  /* Réglages */
+  .field { padding: 14px 0; border-top: 1px solid var(--border); }
+  h2 + .field { border-top: 0; }
+  .field > label { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 500; }
+  .field small { display: block; color: var(--muted); font-size: 13px; }
+  .field output { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 400; }
+  .field.off .sub { opacity: .4; pointer-events: none; }
+  input[type=range] { width: 100%; margin: 8px 0 0; accent-color: var(--accent); }
+  input[type=checkbox] { appearance: none; margin: 0; width: 40px; height: 22px; border-radius: 11px; background: var(--border); position: relative; cursor: pointer; flex: none; transition: background .2s; }
+  input[type=checkbox]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  input[type=checkbox]:checked { background: var(--accent); }
+  input[type=checkbox]:checked::after { transform: translateX(18px); }
+
+  /* Mini-écran : choix du coin, avec le halo et la pastille à l'échelle */
+  .screen { position: relative; display: grid; grid-template-columns: 1fr 1fr; width: 180px; aspect-ratio: 16 / 10; margin-top: 10px; border: 2px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .screen::before { content: ""; position: absolute; left: 0; right: 0; height: 3px; background: var(--amber); top: 0; }
+  .screen[data-edge=bottom]::before { top: auto; bottom: 0; }
+  .screen button { border: 0; border-radius: 0; padding: 9px 7px; background: transparent; display: flex; }
+  .screen button::after { content: ""; width: 34px; height: 10px; border-radius: 5px; background: var(--track); transition: background .2s; }
+  .screen button[aria-checked=true]::after { background: #1f2430; box-shadow: inset 4px 0 0 -1px var(--amber); }
+  .screen button:hover::after { background: var(--border); }
+  .screen [data-corner$=right] { justify-content: flex-end; }
+  .screen [data-corner^=bottom] { align-items: flex-end; }
+  .path { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+  #saved { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0; transition: opacity .4s; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Assistant de posture</h1>
+      <p>Fonctionne en arrière-plan : vous pouvez fermer cet onglet. Icône près de l'horloge pour revenir ici.</p>
+    </div>
+    <button id="quit" class="ghost" type="button">Arrêter l'assistant</button>
+  </header>
+
+  <div class="col">
+    <section class="card">
+      <div class="status" id="status" data-tone="idle" role="status">
+        <div class="dot" aria-hidden="true"></div>
+        <div><strong id="status-title">Connexion…</strong><span id="status-detail"></span></div>
+      </div>
+
+      <div class="gauges">
+        <div class="gauge" data-gauge="slouch">
+          <div class="gauge-head"><span>Épaules</span><output></output></div>
+          <div class="track"><div class="fill"></div><div class="mark"></div></div>
+        </div>
+        <div class="gauge" data-gauge="head">
+          <div class="gauge-head"><span>Tête</span><output></output></div>
+          <div class="track"><div class="fill"></div><div class="mark"></div></div>
+        </div>
+        <small>Écart à votre posture de référence. Le trait marque votre seuil de tolérance.</small>
+      </div>
+
+      <div class="actions">
+        <button id="calibrate" class="primary" type="button">Calibrer ma posture</button>
+        <button id="test" type="button">Tester le signalement</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <details id="preview">
+        <summary>Aperçu webcam</summary>
+        <div class="video">
+          <p id="video-off">Aperçu indisponible</p>
+          <img id="video" alt="Aperçu de la webcam avec le squelette détecté">
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2>Détection <span id="saved"></span></h2>
+      <div class="field">
+        <label>Détection active <input type="checkbox" data-key="enabled"></label>
+        <small>Mettez en pause pendant une visio : la webcam est libérée.</small>
+      </div>
+      <div class="field">
+        <label>Épaules affaissées <input type="checkbox" data-key="detect_slouch"></label>
+        <div class="sub">
+          <small>Tolérance : <output data-for="slouch_threshold" data-format="pct"></output> (plus bas = plus sensible)</small>
+          <input type="range" data-key="slouch_threshold" min="0.01" max="0.4" step="0.01" aria-label="Tolérance épaules affaissées">
+        </div>
+      </div>
+      <div class="field">
+        <label>Tête en avant <input type="checkbox" data-key="detect_head"></label>
+        <div class="sub">
+          <small>Tolérance : <output data-for="head_threshold" data-format="pct"></output> (plus bas = plus sensible)</small>
+          <input type="range" data-key="head_threshold" min="0.01" max="0.5" step="0.01" aria-label="Tolérance tête en avant">
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Signalement</h2>
+      <div class="field">
+        <label for="alert-delay">Halo après <output data-for="alert_delay" data-format="s"></output></label>
+        <small>Un liseré ambre pulse doucement en bord d'écran. Aucun son, aucune fenêtre, jamais de vol du focus.</small>
+        <input id="alert-delay" type="range" data-key="alert_delay" min="1" max="60" step="1">
+      </div>
+      <div class="field">
+        <label>Rappel « Redressez-vous » <input type="checkbox" data-key="show_pill"></label>
+        <div class="sub">
+          <small>Si le halo persiste encore <output data-for="escalation_delay" data-format="s"></output>, une petite pastille indique le motif.</small>
+          <input type="range" data-key="escalation_delay" min="5" max="300" step="5" aria-label="Délai avant le rappel">
+        </div>
+      </div>
+      <div class="field">
+        <label>Position</label>
+        <small>Le halo suit le bord, la pastille le coin.</small>
+        <div class="screen" role="radiogroup" aria-label="Coin de l'écran">
+          <button type="button" role="radio" data-corner="top-left" aria-label="En haut à gauche"></button>
+          <button type="button" role="radio" data-corner="top-right" aria-label="En haut à droite"></button>
+          <button type="button" role="radio" data-corner="bottom-left" aria-label="En bas à gauche"></button>
+          <button type="button" role="radio" data-corner="bottom-right" aria-label="En bas à droite"></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Système</h2>
+      <div class="field">
+        <label>Lancer au démarrage de Windows <input type="checkbox" data-key="autostart"></label>
+        <small>Réglages et journal : <span class="path">%APPDATA%\AssistantPosture</span></small>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const pct = v => `${Math.round(v * 100)} %`;
+
+// état serveur -> [ton, titre, détail]
+const STATUS = {
+  starting:     ["idle",  "Démarrage…", ""],
+  error:        ["alert", "Erreur de détection", "Redémarrage automatique… Détails dans le journal."],
+  camera_error: ["alert", "Webcam indisponible", "Utilisée par une autre application ? Nouvel essai automatique…"],
+  paused:       ["idle",  "En pause", "La webcam est libérée."],
+  uncalibrated: ["warn",  "Calibration nécessaire", "Asseyez-vous bien droit, face à l'écran, puis cliquez sur « Calibrer ma posture »."],
+  calibrating:  ["warn",  "Calibration…", ""],
+  absent:       ["idle",  "Hors champ", "Placez votre tête et vos épaules dans l'image."],
+  ok:           ["ok",    "Posture correcte", "Continuez comme ça."],
+  bad:          ["warn",  "Posture à surveiller", ""],
+  alert:        ["alert", "Redressez-vous", ""],
+};
+
+const value = key => {
+  const el = $(`[data-key=${key}]`);
+  return el.type === "checkbox" ? el.checked : +el.value;
+};
+
+function fill(s) {
+  $$("[data-key]").forEach(el => el.type === "checkbox" ? el.checked = s[el.dataset.key] : el.value = s[el.dataset.key]);
+  setCorner(s.overlay_corner);
+  refresh();
+}
+
+function setCorner(corner) {
+  $$("[data-corner]").forEach(b => b.setAttribute("aria-checked", b.dataset.corner === corner));
+  $(".screen").dataset.edge = corner.startsWith("top") ? "top" : "bottom";
+}
+
+function refresh() {
+  $$("output[data-for]").forEach(o => {
+    const v = value(o.dataset.for);
+    o.textContent = o.dataset.format === "pct" ? pct(v) : `${v} s`;
+  });
+  $$(".field").forEach(f => {
+    const toggle = f.querySelector("input[type=checkbox]");
+    f.classList.toggle("off", !!toggle && !toggle.checked);
+  });
+}
+
+function drawGauges(status) {
+  for (const [name, flag] of [["slouch", "detect_slouch"], ["head", "detect_head"]]) {
+    const g = $(`[data-gauge=${name}]`), dev = status[`${name}_dev`], limit = value(`${name}_threshold`);
+    const known = typeof dev === "number";
+    g.classList.toggle("off", !value(flag));
+    g.classList.toggle("over", known && dev > limit);
+    // le seuil est au milieu de la jauge
+    g.querySelector(".fill").style.width = known ? `${Math.min(Math.max(dev / (2 * limit), 0), 1) * 100}%` : "0";
+    g.querySelector("output").textContent = known ? `${pct(Math.max(dev, 0))} / seuil ${pct(limit)}` : "—";
+  }
+}
+
+async function post(path, body = {}) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+let pending = {}, saveTimer, flashTimer;
+function save(update) {
+  Object.assign(pending, update);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const body = pending;
+    pending = {};
+    try { fill(await post("/api/settings", body)); flash("Enregistré"); }
+    catch { flash("Échec de l'enregistrement"); }
+  }, 250);
+}
+function flash(text) {
+  $("#saved").textContent = text;
+  $("#saved").style.opacity = 1;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => $("#saved").style.opacity = 0, 1500);
+}
+
+function setText(el, text) { if (el.textContent !== text) el.textContent = text; }
+
+// L'aperçu ne circule que lorsqu'il est déplié (la détection n'encode alors aucune image)
+$("#preview").addEventListener("toggle", () => {
+  if ($("#preview").open) $("#video").src = "/video";
+  else $("#video").removeAttribute("src");
+});
+
+let filled = false;
+async function poll() {
+  try {
+    const { status, settings } = await (await fetch("/api/state")).json();
+    if (!filled) {
+      fill(settings);
+      filled = true;
+      if (!settings.reference) $("#preview").open = true;  // premier lancement : utile pour se placer
+    }
+    const [tone, title, detail] = STATUS[status.state] || STATUS.starting;
+    let text = detail;
+    if (status.state === "calibrating") text = `Restez droit encore ${Math.ceil(status.remaining)} s`;
+    if (status.state === "bad" || status.state === "alert")
+      text = [status.slouch && "Épaules affaissées", status.head && "Tête en avant"].filter(Boolean).join(" · ");
+    $("#status").dataset.tone = tone;
+    setText($("#status-title"), title);
+    setText($("#status-detail"), text);
+    drawGauges(status);
+    const live = !["starting", "paused", "camera_error", "error"].includes(status.state);
+    $("#video").hidden = !live;
+    $("#video-off").hidden = live;
+    $("#calibrate").disabled = !live || status.state === "calibrating";
+    $("#calibrate").textContent = settings.reference ? "Recalibrer" : "Calibrer ma posture";
+    document.title = status.state === "alert" ? "● Redressez-vous" : "Assistant de posture";
+  } catch {
+    $("#status").dataset.tone = "idle";
+    setText($("#status-title"), "Assistant arrêté");
+    setText($("#status-detail"), "Relancez l'application pour reprendre.");
+  }
+  setTimeout(poll, 500);
+}
+
+$$("[data-key]").forEach(el => el.addEventListener("input", () => {
+  refresh();
+  save({ [el.dataset.key]: value(el.dataset.key) });
+}));
+$$("[data-corner]").forEach(b => b.addEventListener("click", () => {
+  setCorner(b.dataset.corner);
+  save({ overlay_corner: b.dataset.corner });
+}));
+$("#calibrate").addEventListener("click", () => post("/api/calibrate"));
+$("#test").addEventListener("click", () => post("/api/test-alert"));
+$("#quit").addEventListener("click", async () => {
+  if (!confirm("Arrêter l'assistant de posture ? La détection ne tournera plus en arrière-plan.")) return;
+  await post("/api/quit").catch(() => {});
+  document.body.innerHTML = "<main><p>Assistant arrêté. Vous pouvez fermer cet onglet.</p></main>";
+});
+poll();
+</script>
+</body>
+</html>
