@@ -1,0 +1,52 @@
+# Construit l'app macOS (Apple Silicon) : tests, PyInstaller, zip.
+# Sur un tag v*, le zip est ajoute a la release GitHub du meme nom.
+name: Build macOS
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest  # arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dependances
+        run: pip install -r requirements.lock -e ".[dev]"
+
+      - name: Tests
+        run: python -m pytest -q
+
+      - name: Construction de l'app
+        run: |
+          pyinstaller --noconfirm --clean --windowed --name AssistantPosture \
+            --osx-bundle-identifier com.assistantposture \
+            --paths . --add-data "posture/index.html:posture" --collect-data mediapipe \
+            posture/__main__.py
+          PLIST=dist/AssistantPosture.app/Contents/Info.plist
+          # Sans cette phrase, macOS refuse la camera ; LSUIElement : application de barre des menus, sans icone de Dock
+          plutil -insert NSCameraUsageDescription -string "Analyser votre posture. Les images restent sur votre Mac." "$PLIST"
+          plutil -insert LSUIElement -bool true "$PLIST"
+          # Info.plist modifie : nouvelle signature ad hoc (obligatoire sur Apple Silicon)
+          codesign --force --deep --sign - dist/AssistantPosture.app
+          codesign --verify --deep --strict dist/AssistantPosture.app
+          ditto -c -k --keepParent dist/AssistantPosture.app AssistantPosture-macOS.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AssistantPosture-macOS
+          path: AssistantPosture-macOS.zip
+
+      - name: Ajout a la release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" AssistantPosture-macOS.zip --clobber

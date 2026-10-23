@@ -4,39 +4,78 @@
 Les fenetres sont traversees par la souris et ne prennent jamais le focus.
 """
 
-import ctypes
-import ctypes.wintypes
 import math
+import sys
 import time
 import tkinter as tk
 
 from posture.state import state
 
 AMBER, CARD, TEXT, MUTED = "#f0a030", "#1f2430", "#ffffff", "#b9c0cc"
-KEY = "#010203"  # couleur rendue transparente par Windows
-# shortcut: Windows uniquement (styles de fenetre, transparence), ecran principal seulement et zone de travail lue
-# au placement ; a revoir pour macOS/Linux, le multi-ecran ou une barre des taches deplacee en cours de route
-user32 = ctypes.windll.user32
+MAC = sys.platform == "darwin"
+# shortcut: ecran principal seulement et zone de travail lue au changement de coin ; a revoir pour le multi-ecran
+# ou une barre des taches / un Dock deplace en cours de route
+
+if MAC:
+    from AppKit import NSApplication, NSScreen  # PyObjC, deja requis par pystray sous macOS
+
+    TRANSPARENT = "systemTransparent"
+    FONT, TITLE_SIZE, DETAIL_SIZE = "Helvetica Neue", 14, 12
+
+    def work_area():
+        """Zone de l'ecran principal hors barre des menus et Dock, en points, origine en haut a gauche."""
+        screen = NSScreen.mainScreen()
+        full, visible = screen.frame(), screen.visibleFrame()
+        top = full.size.height - (visible.origin.y + visible.size.height)  # Cocoa compte depuis le bas
+        left = visible.origin.x
+        return int(left), int(top), int(left + visible.size.width), int(top + visible.size.height)
+
+    def make_passive(win, title):
+        """Clics traversants, et presence sur tous les bureaux et par-dessus les apps en plein ecran."""
+        win.update_idletasks()
+        for ns_window in NSApplication.sharedApplication().windows():
+            if ns_window.title() == title:
+                ns_window.setIgnoresMouseEvents_(True)
+                ns_window.setCollectionBehavior_(1 | 16 | 256)  # CanJoinAllSpaces | Stationary | FullScreenAuxiliary
+
+    def make_transparent(win):
+        win.attributes("-transparent", True)
+        win.configure(bg=TRANSPARENT)
+
+else:
+    import ctypes
+    import ctypes.wintypes
+
+    user32 = ctypes.windll.user32
+    TRANSPARENT = "#010203"  # couleur rendue transparente par Windows
+    FONT, TITLE_SIZE, DETAIL_SIZE = "Segoe UI", 11, 9
+
+    def work_area():
+        """Zone de l'ecran principal hors barre des taches, en pixels."""
+        rect = ctypes.wintypes.RECT()
+        user32.SystemParametersInfoW(0x30, 0, ctypes.byref(rect), 0)  # SPI_GETWORKAREA
+        return rect.left, rect.top, rect.right, rect.bottom
+
+    def make_passive(win, title):
+        """Clics traversants, jamais de focus, absente d'Alt+Tab."""
+        win.update_idletasks()
+        hwnd = user32.GetParent(win.winfo_id())
+        style = user32.GetWindowLongW(hwnd, -20)  # GWL_EXSTYLE
+        # LAYERED | TRANSPARENT | TOOLWINDOW | NOACTIVATE
+        user32.SetWindowLongW(hwnd, -20, style | 0x80000 | 0x20 | 0x80 | 0x08000000)
+
+    def make_transparent(win):
+        win.attributes("-transparentcolor", TRANSPARENT)
 
 
-def work_area():
-    """Zone de l'ecran principal hors barre des taches, en pixels."""
-    rect = ctypes.wintypes.RECT()
-    user32.SystemParametersInfoW(0x30, 0, ctypes.byref(rect), 0)  # SPI_GETWORKAREA
-    return rect.left, rect.top, rect.right, rect.bottom
-
-
-def floating_window(master=None):
-    """Fenetre sans bordure, au premier plan, invisible au depart, traversee par la souris et sans focus."""
+def floating_window(title, master=None):
+    """Fenetre sans bordure, au premier plan, invisible au depart."""
     win = tk.Tk() if master is None else tk.Toplevel(master)
+    win.title(title)  # sert aussi a retrouver la fenetre native sous macOS
     win.overrideredirect(True)
     win.attributes("-topmost", True)
     win.attributes("-alpha", 0.0)
-    win.update_idletasks()
-    hwnd = user32.GetParent(win.winfo_id())
-    style = user32.GetWindowLongW(hwnd, -20)  # GWL_EXSTYLE
-    # LAYERED | TRANSPARENT (clics traversants) | TOOLWINDOW (hors Alt+Tab) | NOACTIVATE (jamais le focus)
-    user32.SetWindowLongW(hwnd, -20, style | 0x80000 | 0x20 | 0x80 | 0x08000000)
+    make_passive(win, title)
     return win
 
 
@@ -50,22 +89,23 @@ class Overlay:
     HALO, PILL_W, PILL_H, MARGIN = 5, 300, 64, 16  # tailles a 100 % d'echelle
 
     def __init__(self):
-        self.root = floating_window()
+        self.root = floating_window("posture-halo")
         self.root.configure(bg=AMBER)  # le halo est la fenetre racine elle-meme
-        self.scale = self.root.winfo_fpixels("1i") / 96
+        # Windows compte en pixels physiques (application DPI aware) ; macOS en points, deja mis a l'echelle
+        self.scale = 1.0 if MAC else self.root.winfo_fpixels("1i") / 96
 
-        self.pill = floating_window(self.root)
-        self.pill.attributes("-transparentcolor", KEY)
+        self.pill = floating_window("posture-pill", self.root)
+        make_transparent(self.pill)
         w, h = self.px(self.PILL_W), self.px(self.PILL_H)
-        canvas = tk.Canvas(self.pill, width=w, height=h, bg=KEY, highlightthickness=0)
+        canvas = tk.Canvas(self.pill, width=w, height=h, bg=TRANSPARENT, highlightthickness=0)
         canvas.pack()
         rounded_rect(canvas, 0, 0, w - 1, h - 1, h // 2, fill=CARD)
         r, cx = self.px(6), self.px(28)
         canvas.create_oval(cx - r, h // 2 - r, cx + r, h // 2 + r, fill=AMBER, outline="")
         x = self.px(46)
         canvas.create_text(x, h // 2 - self.px(10), anchor="w", text="Redressez-vous", fill=TEXT,
-                           font=("Segoe UI", 11, "bold"))
-        self.detail = canvas.create_text(x, h // 2 + self.px(11), anchor="w", fill=MUTED, font=("Segoe UI", 9))
+                           font=(FONT, TITLE_SIZE, "bold"))
+        self.detail = canvas.create_text(x, h // 2 + self.px(11), anchor="w", fill=MUTED, font=(FONT, DETAIL_SIZE))
         self.canvas = canvas
 
         self.halo_alpha = self.pill_alpha = 0.0

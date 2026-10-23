@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import sys
 import threading
 from pathlib import Path
 from types import SimpleNamespace
@@ -11,7 +12,10 @@ from posture import core
 
 log = logging.getLogger(__name__)
 
-APP_DIR = Path(os.environ.get("APPDATA", Path.home())) / "AssistantPosture"
+if sys.platform == "win32":
+    APP_DIR = Path(os.environ.get("APPDATA", Path.home())) / "AssistantPosture"
+else:
+    APP_DIR = Path.home() / "Library" / "Application Support" / "AssistantPosture"
 SETTINGS_FILE = APP_DIR / "settings.json"
 
 CORNERS = ("top-left", "top-right", "bottom-left", "bottom-right")
