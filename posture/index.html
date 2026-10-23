@@ -14,7 +14,7 @@
     :root { --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #98a2b3; --border: #2a2f37; --track: #262b33; --accent: #748ffc; }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font: 15px/1.5 system-ui, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
   main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 48px; display: grid; gap: 16px; grid-template-columns: 1.25fr 1fr; align-items: start; }
   @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
   .col { display: grid; gap: 16px; }
@@ -94,7 +94,7 @@
   <header>
     <div>
       <h1>Assistant de posture</h1>
-      <p>Fonctionne en arrière-plan : vous pouvez fermer cet onglet. Icône près de l'horloge pour revenir ici.</p>
+      <p>Fonctionne en arrière-plan : vous pouvez fermer cet onglet. Son icône (près de l'horloge sous Windows, dans la barre des menus sur Mac) permet de revenir ici.</p>
     </div>
     <button id="quit" class="ghost" type="button">Arrêter l'assistant</button>
   </header>
@@ -187,8 +187,8 @@
     <section class="card">
       <h2>Système</h2>
       <div class="field">
-        <label>Lancer au démarrage de Windows <input type="checkbox" data-key="autostart"></label>
-        <small>Réglages et journal : <span class="path">%APPDATA%\AssistantPosture</span></small>
+        <label>Lancer à l'ouverture de session <input type="checkbox" data-key="autostart"></label>
+        <small>Réglages et journal : <span class="path">%APPDATA%\AssistantPosture</span> (Windows) ou <span class="path">~/Library/Application Support/AssistantPosture</span> (Mac)</small>
       </div>
     </section>
   </div>
@@ -203,7 +203,7 @@ const pct = v => `${Math.round(v * 100)} %`;
 const STATUS = {
   starting:     ["idle",  "Démarrage…", ""],
   error:        ["alert", "Erreur de détection", "Redémarrage automatique… Détails dans le journal."],
-  camera_error: ["alert", "Webcam indisponible", "Utilisée par une autre application ? Nouvel essai automatique…"],
+  camera_error: ["alert", "Webcam indisponible", "Utilisée par une autre application, ou accès refusé dans les réglages de confidentialité ? Nouvel essai automatique…"],
   paused:       ["idle",  "En pause", "La webcam est libérée."],
   uncalibrated: ["warn",  "Calibration nécessaire", "Asseyez-vous bien droit, face à l'écran, puis cliquez sur « Calibrer ma posture »."],
   calibrating:  ["warn",  "Calibration…", ""],

@@ -1,7 +1,6 @@
-"""Icone de la zone de notification : sa couleur suit la posture, clic droit pour les actions rapides."""
+"""Icone de la zone de notification (Windows) ou de la barre des menus (macOS) : sa couleur suit la posture."""
 
-import threading
-import time
+import sys
 import webbrowser
 
 import pystray
@@ -25,6 +24,8 @@ STATES = {  # etat -> (couleur, libelle)
     "error": (RED, "Erreur, voir le journal"),
 }
 
+_shown = None
+
 
 def draw_icon(color):
     """Silhouette blanche (tete + epaules) sur une pastille de couleur."""
@@ -36,39 +37,37 @@ def draw_icon(color):
     return img
 
 
-def _toggle_pause(icon):
-    update_settings({"enabled": not state.settings["enabled"]})
-    icon.update_menu()
-
-
-def _toggle_autostart(icon):
-    autostart.set_enabled(not autostart.is_enabled())
-    icon.update_menu()
-
-
-def _follow_status(icon):
-    icon.visible = True
-    shown = None
-    while state.running:
-        current = (state.status.get("state", "starting"), state.settings["enabled"], autostart.is_enabled())
-        if current != shown:
-            if shown is None or current[0] != shown[0]:
-                color, label = STATES.get(current[0], STATES["starting"])
-                icon.icon = draw_icon(color)
-                icon.title = f"Assistant de posture : {label}"
-            icon.update_menu()  # coches « Pause » / « Démarrage » modifiables depuis l'interface web
-            shown = current
-        time.sleep(0.5)
-
-
 def start():
+    """Cree l'icone. A appeler depuis le fil principal, apres la creation de la fenetre Tk."""
+    options = {}
+    if sys.platform == "darwin":
+        from AppKit import NSApplication
+        options["darwin_nsapplication"] = NSApplication.sharedApplication()  # celle de Tk : une seule boucle Cocoa
     icon = pystray.Icon("AssistantPosture", draw_icon(GREY), "Assistant de posture", menu=pystray.Menu(
         pystray.MenuItem("Ouvrir les réglages", lambda: webbrowser.open(URL), default=True),
-        pystray.MenuItem("Pause", _toggle_pause, checked=lambda item: not state.settings["enabled"]),
-        pystray.MenuItem("Lancer au démarrage de Windows", _toggle_autostart,
+        pystray.MenuItem("Pause", lambda: update_settings({"enabled": not state.settings["enabled"]}),
+                         checked=lambda item: not state.settings["enabled"]),
+        pystray.MenuItem("Lancer à l'ouverture de session", lambda: autostart.set_enabled(not autostart.is_enabled()),
                          checked=lambda item: autostart.is_enabled()),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Quitter", lambda: setattr(state, "running", False)),
-    ))
-    threading.Thread(target=icon.run, kwargs={"setup": _follow_status}, daemon=True, name="tray").start()
+    ), **options)
+    # Windows : boucle dans un fil dedie ; macOS : la boucle de Tk sert aussi l'icone
+    icon.run_detached(setup=lambda icon: None)
     return icon
+
+
+def refresh(icon):
+    """Suit l'etat de l'application. Appelee depuis le fil principal (obligatoire sous macOS pour AppKit)."""
+    global _shown
+    current = (state.status.get("state", "starting"), state.settings["enabled"], autostart.is_enabled())
+    if current == _shown:
+        return
+    if _shown is None:
+        icon.visible = True
+    if _shown is None or current[0] != _shown[0]:
+        color, label = STATES.get(current[0], STATES["starting"])
+        icon.icon = draw_icon(color)
+        icon.title = f"Assistant de posture : {label}"
+    icon.update_menu()  # coches « Pause » / « Ouverture de session » modifiables depuis l'interface web
+    _shown = current
