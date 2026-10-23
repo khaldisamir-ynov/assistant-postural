@@ -1,8 +1,9 @@
-"""Point d'entree : python -m posture, posture-coach (apres pip install) ou AssistantPosture.exe."""
+"""Point d'entree : python -m posture, assistant-posture (apres pip install), AssistantPosture.exe ou .app."""
 
 import ctypes
 import logging
 import signal
+import sys
 import threading
 import webbrowser
 from logging.handlers import RotatingFileHandler
@@ -37,14 +38,24 @@ def main():
 
     log.info("Demarrage v%s, reglages dans %s", __version__, APP_DIR)
     state.settings = load_settings()
+    if sys.platform == "darwin":
+        import cv2
+        # macOS : OpenCV ne peut demander l'autorisation camera que depuis le fil principal, avant la detection
+        cv2.VideoCapture(0).release()
     threading.Thread(target=httpd.serve_forever, daemon=True, name="server").start()
     detection = threading.Thread(target=detector.run, name="detection")
     detection.start()
-    icon = tray.start()
     signal.signal(signal.SIGINT, lambda *_: setattr(state, "running", False))
 
-    overlay = Overlay()
+    overlay = Overlay()  # avant l'icone : sous macOS, c'est Tk qui cree l'application Cocoa
     overlay.root.report_callback_exception = lambda *exc: log.error("Erreur d'affichage", exc_info=exc)
+    icon = tray.start()
+
+    def follow_tray():
+        overlay.root.after(500, follow_tray)  # replanifie d'abord : une erreur ponctuelle n'arrete pas le suivi
+        tray.refresh(icon)
+
+    overlay.root.after(500, follow_tray)  # laisse a l'icone le temps d'etre prete
     if state.settings["reference"] is None:
         webbrowser.open(server.URL)  # premier lancement : guider la calibration
     overlay.root.mainloop()  # jusqu'a l'arret (state.running = False)

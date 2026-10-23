@@ -5,13 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "assistant-posture"
 dynamic = ["version"]
-description = "Assistant de posture : detection webcam en arriere-plan et signalement discret (Windows)"
+description = "Assistant de posture : detection webcam en arriere-plan et signalement discret (Windows, macOS)"
 requires-python = ">=3.9,<3.13"
 dependencies = [
     "opencv-python>=4.8",
     "mediapipe==0.10.21",  # les versions suivantes ont retire mp.solutions
     "pystray>=0.19",
     "Pillow>=10",
+    "pyobjc-framework-Cocoa>=9; sys_platform == 'darwin'",  # fenetres d'alerte natives sous macOS
 ]
 
 [project.optional-dependencies]
