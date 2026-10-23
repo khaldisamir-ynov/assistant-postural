@@ -2,7 +2,7 @@
 
 **Objectif** : application locale qui aide à garder une bonne posture toute la journée au bureau, avec une alerte silencieuse et non intrusive.
 
-**Version actuelle** : MVP 0.2.0. Architecture et commandes dans le [README](README.md).
+**Version actuelle** : 0.3.0 (Windows + macOS). Architecture et commandes dans le [README](README.md).
 
 ## Avancement
 
@@ -15,7 +15,18 @@
 | 5 | Gestion du temps et alertes | ✅ Fait |
 | 6 | Réglage des seuils sur personne réelle | ✅ Fait (tolérances 3 % / 5 %, délai 2 s) |
 | 7 | POC application locale : interface web + alerte silencieuse | ✅ Validé |
-| 8 | MVP : paquet Python, tests, arrière-plan (icône), signalement en escalade, exe, démarrage auto | ✅ Fait (à valider en usage réel) |
+| 8 | MVP : paquet Python, tests, arrière-plan (icône), signalement en escalade, exe, démarrage auto | ✅ Fait, publié (v0.2.0) |
+| 9 | Support macOS (Apple Silicon) : app construite par GitHub Actions | 🧪 Construit en CI, à tester sur un vrai Mac |
+
+## 0.3.0 : support macOS
+
+- **Indicateur** : mêmes halo et pastille ; sous macOS, transparence native de Tk et fenêtres AppKit (PyObjC) réglées pour laisser passer les clics et rester visibles sur tous les bureaux et au-dessus des apps en plein écran.
+- **Icône de la barre des menus** : pystray partage l'application Cocoa de Tk ; toutes les mises à jour de l'icône passent par la boucle Tk (fil principal, exigé par AppKit). Même code sous Windows.
+- **Caméra** : l'autorisation est demandée depuis le fil principal au démarrage (contrainte d'OpenCV/AVFoundation) ; `NSCameraUsageDescription` ajoutée à l'app.
+- **Ouverture de session** : LaunchAgent `~/Library/LaunchAgents/com.assistantposture.plist`.
+- **Réglages et journal** : `~/Library/Application Support/AssistantPosture/`.
+- **Distribution** : `.github/workflows/macos.yml` construit `AssistantPosture-macOS.zip` (tests, PyInstaller, `LSUIElement` pour une app sans icône de Dock, signature ad hoc) et l'ajoute à chaque release `v*`.
+- **Limites** : Apple Silicon uniquement (pas d'app Intel) ; app non signée par un compte Apple Developer, donc « Ouvrir quand même » au premier lancement ; non testée sur un vrai Mac à ce stade.
 
 ## MVP 0.2.0
 
@@ -74,11 +85,13 @@
 - Script `posture_assistant.py` (étapes 1 à 5), environnement `.venv`, premier lancement webcam réussi.
 - POC application locale (serveur web + point ambre), vérifications de sécurité.
 - Réglages validés en usage réel : épaules 3 %, tête 5 %, délai 2 s, coin haut droite → valeurs par défaut.
-- MVP 0.2.0 : paquet, tests, icône, halo + pastille, interface repensée, exe, démarrage auto.
+- MVP 0.2.0 : paquet, tests, icône, halo + pastille, interface repensée, exe, démarrage auto. Publié sur GitHub (release v0.2.0).
+- 0.3.0 : support macOS ; Windows revérifié (tests, signalement, arrêt propre).
 
 ## Prochaines étapes
 
+- [ ] Tester l'app macOS sur un vrai Mac : lancement, autorisation caméra, icône de barre des menus, halo et pastille.
 - [ ] Utiliser le MVP une journée complète : gêne du halo et de la pastille, fréquence des alertes, CPU.
 - [ ] Icône dédiée pour l'exe (actuellement l'icône PyInstaller par défaut).
-- [ ] Limites connues : Windows uniquement, écran principal seulement, position recalculée seulement au changement de coin (barre des tâches déplacée en cours de route non prise en compte).
+- [ ] Limites connues : écran principal seulement, position recalculée seulement au changement de coin (barre des tâches déplacée en cours de route non prise en compte).
 - [ ] Pistes : statistiques de la journée (temps en bonne posture), CI (tests + build de l'exe à chaque push), signature de l'exe (évite l'avertissement SmartScreen).
