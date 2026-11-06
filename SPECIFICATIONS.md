@@ -203,7 +203,9 @@ Les résultats du § 6.5 viennent d'images générées. Cet essai les confirme o
 ```powershell
 .\.venv\Scripts\python essais\enregistrer.py essais\donnees\2026-11-06-reel --photos
 ```
-Cliquer dans la fenêtre, puis ESPACE. Pour chaque posture : 4 s de préparation (consigne en orange), puis 12 s d'enregistrement (en vert), avec une photo toutes les 2 s.
+Cliquer dans la fenêtre, puis ESPACE. Pour chaque posture : 6 s de préparation (consigne en orange), puis 12 s d'enregistrement (en vert), avec une photo toutes les 2 s. **Prendre la posture pendant la préparation et ne plus bouger une fois en vert**, jusqu'à la consigne suivante.
+
+Cet enregistrement sert **aussi d'essai de validation de la détection** (C1, C2), en attente depuis le 2026-10-30 : `landmarks.jsonl` est écrit en même temps que les photos.
 
 | Posture | Consigne | Point d'attention |
 |---------|----------|-------------------|
@@ -382,7 +384,7 @@ Ce que l'essai montre malgré tout :
 | Priorité | Amélioration | Critère visé |
 |----------|--------------|--------------|
 | 0 | **Webcam déplacée sans recalibrage (F13)**, puis lieu reconnu (F14) et dérive lente (F15), selon le résultat de l'essai § 5.4 | C8 |
-| 1 | Regard vers le clavier : ne pas compter la descente des épaules quand seule la tête bouge, ou exiger que les épaules descendent sans que la tête baisse | C1 clavier |
+| 1 | Regard vers le clavier. **Cause trouvée le 2026-11-06** : les 15 % d'images signalées sont toutes dans les transitions (1,3 s au début, en sortant de « tête en avant » ; 0,5 s à la fin). Le reste de la posture, environ 10 s, n'a aucune image signalée, et il n'y a aucune alerte. Correction du protocole, sans toucher aux critères ni à la détection : préparation portée de 4 à 6 s dans `enregistrer.py`. À confirmer avec l'enregistrement du § 5.5 | C1 clavier |
 | 2 | Dérive naturelle : référence qui suit lentement l'utilisateur quand il est droit, ou tolérance épaules adaptée au bruit mesuré pendant la calibration | C1 images |
 | 3 | Essais réels des écrans multiples et revérification de C5 en 0.4.0 | C5, C6 |
 | 4 | Téléphone et boisson : VLM sur la **photo**, avec accord explicite (l'image quitterait la machine), ou détection de mains avec MediaPipe Hands si elles sont dans le champ | Nouveau critère à définir |
