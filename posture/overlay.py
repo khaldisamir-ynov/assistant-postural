@@ -139,8 +139,11 @@ class Overlay:
 
         self.place(s["overlay_corner"])
         if pill:
-            reasons = [label for label, on in (("Épaules affaissées", st.get("slouch")),
-                                               ("Tête en avant", st.get("head"))) if on]
+            reasons = [label for label, on in (("Posture affaissée", st.get("posture")),
+                                               ("Épaules affaissées", st.get("slouch")), ("Tête en avant", st.get("head")),
+                                               ("Penché sur le côté", st.get("lean")),
+                                               ("Trop près de l'écran", st.get("close")),
+                                               ("Tête appuyée sur la main", st.get("hand"))) if on]
             self.canvas.itemconfig(self.detail, text="Aperçu du rappel" if test else " · ".join(reasons))
 
         # Pulsation lente du halo : percue en vision peripherique, sans clignoter
