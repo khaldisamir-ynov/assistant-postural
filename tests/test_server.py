@@ -56,3 +56,22 @@ def test_settings_are_validated(base_url):
 def test_second_instance_cannot_bind_same_port(base_url):
     with pytest.raises(OSError):
         server.Server(("127.0.0.1", int(base_url.rsplit(":", 1)[1])), server.Handler)
+
+
+def test_token_is_validated_and_never_sent_back(base_url):
+    assert post_json(f"{base_url}/api/settings", {"coach_token": "pas-un-token"})[0] == 400
+    code, body = post_json(f"{base_url}/api/settings", {"coach_token": "hf_" + "a" * 34})
+    assert code == 200 and json.loads(body)["coach_token_set"] is True
+    assert "hf_" not in call(f"{base_url}/api/state")[1].decode()
+
+
+def test_coach_needs_token(base_url):
+    code, body = post_json(f"{base_url}/api/coach", {})
+    assert code == 400 and "token" in json.loads(body)["error"]
+
+
+def test_places_api(base_url):
+    code, body = post_json(f"{base_url}/api/place", {"add": "Café"})
+    assert code == 200 and json.loads(body)["place"] == "Café"
+    assert post_json(f"{base_url}/api/place", {"select": "Nulle part"})[0] == 400
+    assert post_json(f"{base_url}/api/calibrate", {"add": "oui"})[0] == 400
