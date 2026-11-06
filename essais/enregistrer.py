@@ -32,7 +32,9 @@ POSTURES = [
 ]
 # Postures utiles a chaque etape (cumulatives) ; sans --etape, toutes les postures
 BY_STEP = {1: {"droit", "tete_avant", "clavier", "avache", "droit2"}, 2: {"penche"}}
-PREP, RECORD = 4, 12
+# Preparation de 6 s (et non 4) : essai du 2026-10-30, les images signalees au clavier etaient toutes dans la transition
+# depuis la posture precedente (1,3 premiere seconde) ; le banc les comptait comme une erreur de detection
+PREP, RECORD = 6, 12
 PHOTO_PERIOD = 2  # 6 photos par posture
 WIN = "Essai posture"
 
