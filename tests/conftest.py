@@ -14,4 +14,6 @@ def isolated_state(tmp_path, monkeypatch):
     monkeypatch.setattr(s, "status", {"state": "starting"})
     monkeypatch.setattr(s, "calib_start", None)
     monkeypatch.setattr(s, "calib_samples", [])
+    monkeypatch.setattr(s, "stats", None)
+    monkeypatch.setattr(s, "calib_message", None)
     return tmp_path
