@@ -185,6 +185,11 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
   - GLM-4.6V rendait des réponses vides (sa réflexion consommait les 20 jetons) : budget porté à 1000.
 - Détail au § 6.5 de SPECIFICATIONS.md. À faire : confirmer sur de vraies photos (`enregistrer.py --photos`) avant toute intégration.
 
+### 2026-11-06 : échec « clavier » expliqué (protocole, pas détection)
+- Sur l'essai du 2026-10-30, les 53 images signalées au clavier (15 %) se répartissent ainsi : 39 dans les 1,3 premières secondes (on sort de « tête en avant », raccourcissement de 4 à 5 %) et 14 dans les 0,5 dernières. Entre les deux, environ 10 s, aucune image signalée ; aucune alerte. En posture établie, le raccourcissement médian est de 0,3 % (seuil 3 %).
+- Contrôle : si l'on ignore 1 s au début et à la fin de chaque posture, le clavier tombe à 3 %, et les mauvaises postures restent détectées (tête en avant, avachi et penché : 100 %). Ce comptage n'est **pas** adopté : il changerait la mesure après avoir vu les résultats.
+- Décision de l'utilisateur : corriger le protocole. Préparation de 4 à 6 s dans `enregistrer.py` ; critères et détection inchangés. L'enregistrement de l'essai VLM (§ 5.5) sert aussi d'essai de validation.
+
 ## Prochaines étapes
 
 - [ ] Tester l'app macOS sur un vrai Mac : lancement, autorisation caméra, icône de barre des menus, halo et pastille.
