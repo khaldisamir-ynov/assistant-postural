@@ -6,9 +6,10 @@ import signal
 import sys
 import threading
 import webbrowser
+from datetime import date
 from logging.handlers import RotatingFileHandler
 
-from posture import __version__, detector, server, tray
+from posture import __version__, detector, server, stats, tray
 from posture.overlay import Overlay
 from posture.state import APP_DIR, load_settings, state
 
@@ -38,6 +39,7 @@ def main():
 
     log.info("Demarrage v%s, reglages dans %s", __version__, APP_DIR)
     state.settings = load_settings()
+    state.stats = stats.load(date.today().isoformat())
     if sys.platform == "darwin":
         import cv2
         # macOS : OpenCV ne peut demander l'autorisation camera que depuis le fil principal, avant la detection
@@ -56,7 +58,7 @@ def main():
         tray.refresh(icon)
 
     overlay.root.after(500, follow_tray)  # laisse a l'icone le temps d'etre prete
-    if state.settings["reference"] is None:
+    if not state.settings["places"][state.settings["place"]]:
         webbrowser.open(server.URL)  # premier lancement : guider la calibration
     overlay.root.mainloop()  # jusqu'a l'arret (state.running = False)
 

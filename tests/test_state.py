@@ -3,7 +3,7 @@ import json
 import pytest
 
 from posture import state as state_module
-from posture.state import DEFAULTS, load_settings, validate
+from posture.state import DEFAULTS, change_place, load_settings, state, validate
 
 
 def test_validate_accepts_good_values():
@@ -36,10 +36,33 @@ def test_bad_value_is_dropped_without_losing_the_rest():
     settings = load_settings()
     assert settings["alert_delay"] == DEFAULTS["alert_delay"]
     assert settings["head_threshold"] == 0.2
-    assert settings["reference"] == ref
+    assert settings["places"] == {"Mon poste": [ref]} and settings["place"] == "Mon poste"  # migration 0.4
     assert "obsolete" not in settings
 
 
 def test_invalid_reference_is_dropped():
     state_module.SETTINGS_FILE.write_text(json.dumps({"reference": [0.7, 0.75, 0]}), encoding="utf-8")
-    assert load_settings()["reference"] is None
+    assert load_settings()["places"] == {"Mon poste": []}
+
+
+def test_places_are_loaded_and_cleaned():
+    ref = [0.7, 0.75, 0.5]
+    state_module.SETTINGS_FILE.write_text(json.dumps({
+        "places": {"Bureau": [ref, [0, 0, 0]], "Maison": [], "	": [ref], "Bar": "x"}, "place": "Inconnu",
+    }), encoding="utf-8")
+    settings = load_settings()
+    assert settings["places"] == {"Bureau": [ref], "Maison": []}
+    assert settings["place"] == "Bureau"
+
+
+def test_change_place():
+    change_place({"add": "Bureau"})
+    assert state.settings["place"] == "Bureau" and state.settings["places"]["Bureau"] == []
+    change_place({"select": "Mon poste"})
+    assert state.settings["place"] == "Mon poste"
+    change_place({"delete": "Mon poste"})
+    assert list(state.settings["places"]) == ["Bureau"] and state.settings["place"] == "Bureau"
+    for bad in ({"delete": "Bureau"}, {"add": "Bureau"}, {"select": "Bar"}, {"add": ""}, {"add": " x"},
+                {"add": "a" * 31}, {"add": ["x"]}, {"rename": "Bureau"}, {"add": "a", "select": "b"}, []):
+        with pytest.raises(ValueError):
+            change_place(bad)

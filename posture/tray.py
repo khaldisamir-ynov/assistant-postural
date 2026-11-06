@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 
 from posture import autostart
 from posture.server import URL
-from posture.state import state, update_settings
+from posture.state import change_place, state, update_settings
 
 GREEN, AMBER, BLUE, GREY, RED = "#1f9d55", "#f0a030", "#3b5bdb", "#98a2b3", "#d64545"
 STATES = {  # etat -> (couleur, libelle)
@@ -37,6 +37,12 @@ def draw_icon(color):
     return img
 
 
+def _place_item(name):
+    # fermeture plutot que lambda a argument par defaut : pystray refuse les actions a plus de 2 arguments
+    return pystray.MenuItem(name, lambda: change_place({"select": name}), radio=True,
+                            checked=lambda item: state.settings["place"] == name)
+
+
 def start():
     """Cree l'icone. A appeler depuis le fil principal, apres la creation de la fenetre Tk."""
     options = {}
@@ -45,6 +51,7 @@ def start():
         options["darwin_nsapplication"] = NSApplication.sharedApplication()  # celle de Tk : une seule boucle Cocoa
     icon = pystray.Icon("AssistantPosture", draw_icon(GREY), "Assistant de posture", menu=pystray.Menu(
         pystray.MenuItem("Ouvrir les réglages", lambda: webbrowser.open(URL), default=True),
+        pystray.MenuItem("Lieu de travail", pystray.Menu(lambda: (_place_item(n) for n in state.settings["places"]))),
         pystray.MenuItem("Pause", lambda: update_settings({"enabled": not state.settings["enabled"]}),
                          checked=lambda item: not state.settings["enabled"]),
         pystray.MenuItem("Lancer à l'ouverture de session", lambda: autostart.set_enabled(not autostart.is_enabled()),
@@ -60,14 +67,15 @@ def start():
 def refresh(icon):
     """Suit l'etat de l'application. Appelee depuis le fil principal (obligatoire sous macOS pour AppKit)."""
     global _shown
-    current = (state.status.get("state", "starting"), state.settings["enabled"], autostart.is_enabled())
+    current = (state.status.get("state", "starting"), state.settings["enabled"], autostart.is_enabled(),
+               state.settings["place"], tuple(state.settings["places"]))
     if current == _shown:
         return
     if _shown is None:
         icon.visible = True
+    color, label = STATES.get(current[0], STATES["starting"])
     if _shown is None or current[0] != _shown[0]:
-        color, label = STATES.get(current[0], STATES["starting"])
         icon.icon = draw_icon(color)
-        icon.title = f"Assistant de posture : {label}"
-    icon.update_menu()  # coches « Pause » / « Ouverture de session » modifiables depuis l'interface web
+    icon.title = f"Assistant de posture : {label} ({current[3]})"
+    icon.update_menu()  # coches « Pause », « Ouverture de session » et lieu modifiables depuis l'interface web
     _shown = current

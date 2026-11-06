@@ -45,7 +45,9 @@ Le premier démarrage prend quelques secondes. Une page s'ouvre dans votre navig
 
 1. Asseyez-vous **bien droit**, face à l'écran, comme vous voudriez vous tenir.
 2. Vérifiez dans l'aperçu que votre **tête et vos épaules** sont visibles.
-3. Cliquez sur **Calibrer ma posture** et restez immobile 3 secondes.
+3. Cliquez sur **Calibrer ma posture** et restez immobile 3 secondes. Si vous bougez, la calibration est refusée : recommencez.
+
+> Pour une mesure stable, vos épaules ne doivent pas être tout en bas de l'image : inclinez l'écran vers le bas ou reculez un peu. L'assistant vous prévient si c'est le cas.
 
 C'est tout : l'application connaît maintenant votre posture de référence.
 
@@ -64,7 +66,7 @@ Vous pouvez **fermer la page** : l'assistant continue de veiller en arrière-pla
 |-----------|-------------------|
 | Posture correcte | Rien. L'icône de l'assistant est **verte**. |
 | Mauvaise posture depuis 2 s | Un **fin liseré ambre** pulse doucement en haut de l'écran. |
-| Toujours mal installé 30 s plus tard | Une petite **pastille « Redressez-vous »** apparaît dans un coin et indique pourquoi (épaules affaissées, tête en avant). |
+| Toujours mal installé 30 s plus tard | Une petite **pastille « Redressez-vous »** apparaît dans un coin et indique pourquoi : épaules affaissées, tête en avant, penché sur le côté (ou accoudé), trop près de l'écran, tête appuyée sur la main. |
 | Vous vous redressez | Tout disparaît en douceur. |
 
 Le liseré et la pastille ne bloquent jamais la souris : vous pouvez cliquer à travers. Sur Mac, ils restent visibles sur tous les bureaux et par-dessus les apps en plein écran.
@@ -75,18 +77,29 @@ Le liseré et la pastille ne bloquent jamais la souris : vous pouvez cliquer à 
 
 Ouvrez les réglages depuis **l'icône de l'assistant** (ou à l'adresse http://127.0.0.1:8765).
 
-- **Tolérance épaules / tête** : plus la valeur est basse, plus l'assistant est exigeant. Les jauges en direct montrent votre écart actuel et le seuil, pour régler en voyant l'effet.
+- **Tolérances** (épaules, tête, inclinaison, distance à l'écran) : plus la valeur est basse, plus l'assistant est exigeant. Chaque détection peut être désactivée. Les jauges en direct montrent votre écart actuel et le seuil, pour régler en voyant l'effet.
 - **Halo après** : combien de secondes de mauvaise posture avant le liseré.
 - **Rappel « Redressez-vous »** : l'activer ou non, et après combien de temps.
 - **Position** : le coin de l'écran où apparaît la pastille (le liseré suit le bord haut ou bas).
 - **Tester le signalement** : pour voir à quoi ressemble l'alerte, sans avoir à se tenir mal.
 - **Lancer à l'ouverture de session** : l'assistant démarre tout seul quand vous allumez votre ordinateur.
+- **Aujourd'hui** : pourcentage du temps en bonne posture, temps suivi, nombre d'alertes et motif le plus fréquent. Remis à zéro chaque jour.
+- **Coach IA (facultatif)** : collez votre token [Hugging Face](https://huggingface.co/settings/tokens) (type *Read*), puis cliquez sur **Demander un bilan au coach** : un LLM (Qwen) propose 3 conseils adaptés à votre journée. Champ *Organisation à facturer* : si une organisation (votre école, par exemple) paie vos appels.
 
 Changé de chaise, d'écran ou de place ? Cliquez sur **Recalibrer**.
+
+### Plusieurs écrans
+
+Tournez-vous vers l'autre écran, tenez-vous droit, puis cliquez sur **Ajouter un écran** (jusqu'à 4). L'assistant compare ensuite votre posture à celle de l'écran que vous regardez : se tourner vers un écran latéral n'est plus pris pour une mauvaise posture.
+
+### Lieux de travail
+
+Bureau, maison, café… Chaque lieu garde ses propres calibrations (une par écran), pour ne pas tout recalibrer en changeant d'endroit. Créez un lieu avec **Nouveau lieu…**, puis changez de lieu depuis la page ou le menu de l'icône (**Lieu de travail**). Tolérances et délais restent communs à tous les lieux.
 
 ### Menu de l'icône (clic droit sous Windows, clic sur Mac)
 
 - **Ouvrir les réglages**
+- **Lieu de travail** : passer d'un lieu à l'autre
 - **Pause** : à utiliser pendant une **visio**, la webcam est libérée pour Teams, Zoom, etc. Recliquez pour reprendre.
 - **Lancer à l'ouverture de session**
 - **Quitter**
@@ -98,7 +111,8 @@ Changé de chaise, d'écran ou de place ? Cliquez sur **Recalibrer**.
 - **Tout reste sur votre ordinateur.** Aucune image n'est enregistrée ni envoyée sur Internet.
 - L'application analyse la position de vos oreilles et de vos épaules, image par image, puis oublie l'image.
 - Les réglages de l'interface ne sont accessibles que depuis votre propre ordinateur.
-- Seuls vos réglages et votre calibration (quelques nombres) sont conservés, dans `%APPDATA%\AssistantPosture\` (Windows) ou `~/Library/Application Support/AssistantPosture/` (Mac).
+- **Coach IA** : seulement si vous l'utilisez, les chiffres du jour (minutes, pourcentage, nombre d'alertes) sont envoyés à Hugging Face. Jamais d'image. Votre token reste sur votre ordinateur, dans le fichier de réglages.
+- Seuls vos réglages, votre calibration et les compteurs du jour (quelques nombres) sont conservés, dans `%APPDATA%\AssistantPosture\` (Windows) ou `~/Library/Application Support/AssistantPosture/` (Mac).
 
 ---
 
@@ -156,6 +170,8 @@ Sur Mac : mêmes commandes avec `.venv/bin/` au lieu de `.\.venv\Scripts\`. L'ap
 | `posture/server.py` | Serveur local (`127.0.0.1` uniquement) : interface, aperçu, API JSON |
 | `posture/overlay.py` | Liseré et pastille (tkinter + Win32 ou AppKit) |
 | `posture/tray.py` | Icône de la zone de notification ou de la barre des menus (pystray) |
+| `posture/stats.py` | Compteurs du jour (temps en bonne posture, alertes) |
+| `posture/coach.py` | Conseils d'un LLM Hugging Face à partir des compteurs |
 | `posture/autostart.py` | Lancement à l'ouverture de session (registre Windows ou LaunchAgent macOS) |
 | `posture/index.html` | Interface de configuration |
 | `posture_assistant.py` | Version script d'origine (fenêtre OpenCV) |
@@ -164,4 +180,4 @@ Sur Mac : mêmes commandes avec `.venv/bin/` au lieu de `.\.venv\Scripts\`. L'ap
 
 **Sécurité** : le serveur n'écoute qu'en local, refuse les en-têtes `Host` étrangers (DNS rebinding) et n'accepte que des `POST` JSON validés : un site web ne peut ni lire la webcam ni piloter l'application.
 
-Historique du projet : [SUIVI_DEVELOPPEMENT.md](SUIVI_DEVELOPPEMENT.md).
+Spécifications, critères de réussite, protocole d'essai (`essais/`), résultats et démo : [SPECIFICATIONS.md](SPECIFICATIONS.md). Historique du projet : [SUIVI_DEVELOPPEMENT.md](SUIVI_DEVELOPPEMENT.md).

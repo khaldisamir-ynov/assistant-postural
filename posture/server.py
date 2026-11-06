@@ -6,8 +6,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from posture import autostart
-from posture.state import state, update_settings, validate
+from posture import autostart, coach
+from posture.state import change_place, state, update_settings, validate
 
 HOST, PORT = "127.0.0.1", 8765  # local uniquement : le flux webcam ne doit jamais sortir de la machine
 URL = f"http://{HOST}:{PORT}"
@@ -24,7 +24,9 @@ class Server(ThreadingHTTPServer):
 
 
 def public_settings():
-    return {**state.settings, "autostart": autostart.is_enabled()}
+    # Le token ne repart jamais vers la page : on indique seulement s'il est enregistre
+    settings = {k: v for k, v in state.settings.items() if k != "coach_token"}
+    return {**settings, "coach_token_set": bool(state.settings["coach_token"]), "autostart": autostart.is_enabled()}
 
 
 def _count_viewer(delta):
@@ -58,7 +60,9 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/":
             self.send_body(INDEX_FILE.read_bytes(), "text/html; charset=utf-8")
         elif self.path == "/api/state":
-            self.send_json({"status": state.status, "settings": public_settings()})
+            calib = state.calib_message
+            self.send_json({"status": state.status, "settings": public_settings(), "stats": state.stats,
+                            "calib_message": calib and {"text": calib["text"], "age": time.time() - calib["at"]}})
         elif self.path == "/video":
             self.stream_video()
         else:
@@ -102,11 +106,30 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"error": str(e)}, 400)
             self.send_json(public_settings())
         elif self.path == "/api/calibrate":
-            state.calib_samples, state.calib_start = [], time.time()
+            add = data.get("add", False)  # True : ajoute un ecran au lieu actif au lieu de tout recalibrer
+            if not isinstance(add, bool):
+                return self.send_error(400)
+            state.calib_add, state.calib_samples, state.calib_start = add, [], time.time()
             self.send_json({})
+        elif self.path == "/api/place":
+            try:
+                change_place(data)
+            except ValueError as e:
+                return self.send_json({"error": str(e)}, 400)
+            self.send_json(public_settings())
         elif self.path == "/api/test-alert":
             state.test_alert_until = time.time() + TEST_ALERT_SECONDS
             self.send_json({})
+        elif self.path == "/api/coach":
+            stats, token = state.stats, state.settings["coach_token"]
+            if not token:
+                return self.send_json({"error": "Enregistrez d'abord votre token Hugging Face."}, 400)
+            if not stats or not stats["good"] + stats["bad"]:
+                return self.send_json({"error": "Pas encore de statistiques aujourd'hui."}, 400)
+            try:
+                self.send_json({"advice": coach.ask(stats, token, state.settings["coach_bill_to"])})
+            except RuntimeError as e:
+                self.send_json({"error": str(e)}, 502)
         elif self.path == "/api/quit":
             state.running = False
             self.send_json({})

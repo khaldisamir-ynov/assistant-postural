@@ -6,3 +6,6 @@ dist/
 *.spec
 .pytest_cache/
 settings.json
+.env
+HUGGING-FACE.md
+essais/donnees/

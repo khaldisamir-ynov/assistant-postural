@@ -84,8 +84,19 @@
   .screen button:hover::after { background: var(--border); }
   .screen [data-corner$=right] { justify-content: flex-end; }
   .screen [data-corner^=bottom] { align-items: flex-end; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+  .stats div { font-size: 13px; color: var(--muted); }
+  .stats strong { display: block; font-size: 22px; font-weight: 650; color: var(--text); font-variant-numeric: tabular-nums; }
+  #stat-main { display: block; margin-top: 10px; color: var(--muted); font-size: 13px; }
+  .hint { display: block; margin-top: 10px; color: var(--muted); font-size: 13px; }
+  .advice { margin: 14px 0 0; white-space: pre-line; }
+  .advice:empty { display: none; }
+  .advice.error { color: var(--alert); }
+  select, input[type=text], input[type=password] { font: inherit; width: 100%; margin-top: 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  .row { display: flex; gap: 8px; align-items: end; }
+  .row button { flex: none; }
   .path { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
-  #saved { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0; transition: opacity .4s; }
+  #saved, #coach-saved, #place-saved { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0; transition: opacity .4s; }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
@@ -107,6 +118,10 @@
       </div>
 
       <div class="gauges">
+        <div class="gauge" data-gauge="posture">
+          <div class="gauge-head"><span>Posture (tête → épaules)</span><output></output></div>
+          <div class="track"><div class="fill"></div><div class="mark"></div></div>
+        </div>
         <div class="gauge" data-gauge="slouch">
           <div class="gauge-head"><span>Épaules</span><output></output></div>
           <div class="track"><div class="fill"></div><div class="mark"></div></div>
@@ -115,13 +130,37 @@
           <div class="gauge-head"><span>Tête</span><output></output></div>
           <div class="track"><div class="fill"></div><div class="mark"></div></div>
         </div>
+        <div class="gauge" data-gauge="lean">
+          <div class="gauge-head"><span>Inclinaison du cou</span><output></output></div>
+          <div class="track"><div class="fill"></div><div class="mark"></div></div>
+        </div>
+        <div class="gauge" data-gauge="close">
+          <div class="gauge-head"><span>Distance à l'écran</span><output></output></div>
+          <div class="track"><div class="fill"></div><div class="mark"></div></div>
+        </div>
         <small>Écart à votre posture de référence. Le trait marque votre seuil de tolérance.</small>
       </div>
 
       <div class="actions">
         <button id="calibrate" class="primary" type="button">Calibrer ma posture</button>
+        <button id="add-screen" type="button">Ajouter un écran</button>
         <button id="test" type="button">Tester le signalement</button>
       </div>
+      <small class="hint">Plusieurs écrans ? Tournez-vous vers l'autre écran, tenez-vous droit, puis « Ajouter un écran ».</small>
+    </section>
+
+    <section class="card">
+      <h2>Aujourd'hui</h2>
+      <div class="stats">
+        <div><strong id="stat-good">—</strong>en bonne posture</div>
+        <div><strong id="stat-time">—</strong>suivi</div>
+        <div><strong id="stat-alerts">—</strong>alertes</div>
+      </div>
+      <small id="stat-main"></small>
+      <div class="actions">
+        <button id="coach" type="button">Demander un bilan au coach</button>
+      </div>
+      <p id="advice" class="advice" aria-live="polite"></p>
     </section>
 
     <section class="card">
@@ -137,10 +176,30 @@
 
   <div class="col">
     <section class="card">
+      <h2>Lieu de travail <span id="place-saved"></span></h2>
+      <div class="field">
+        <label for="place">Lieu actuel</label>
+        <small id="place-info"></small>
+        <div class="row">
+          <select id="place"></select>
+          <button id="place-add" type="button">Nouveau lieu…</button>
+          <button id="place-delete" class="ghost" type="button">Supprimer</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
       <h2>Détection <span id="saved"></span></h2>
       <div class="field">
         <label>Détection active <input type="checkbox" data-key="enabled"></label>
         <small>Mettez en pause pendant une visio : la webcam est libérée.</small>
+      </div>
+      <div class="field">
+        <label>Posture affaissée (étape 1) <input type="checkbox" data-key="detect_posture"></label>
+        <div class="sub">
+          <small>Raccourcissement de la hauteur tête → épaules toléré : <output data-for="posture_threshold" data-format="pct"></output> (plus bas = plus sensible). Couvre tête en avant et épaules affaissées.</small>
+          <input type="range" data-key="posture_threshold" min="0.01" max="0.3" step="0.005" aria-label="Tolérance posture affaissée">
+        </div>
       </div>
       <div class="field">
         <label>Épaules affaissées <input type="checkbox" data-key="detect_slouch"></label>
@@ -154,6 +213,27 @@
         <div class="sub">
           <small>Tolérance : <output data-for="head_threshold" data-format="pct"></output> (plus bas = plus sensible)</small>
           <input type="range" data-key="head_threshold" min="0.01" max="0.5" step="0.01" aria-label="Tolérance tête en avant">
+        </div>
+      </div>
+      <div class="field">
+        <label>Penché sur le côté / accoudé (étape 2) <input type="checkbox" data-key="detect_lean"></label>
+        <div class="sub">
+          <small>Inclinaison du cou tolérée : <output data-for="lean_angle" data-format="deg"></output> (plus bas = plus sensible)</small>
+          <input type="range" data-key="lean_angle" min="2" max="30" step="0.5" aria-label="Tolérance inclinaison du cou">
+        </div>
+      </div>
+      <div class="field">
+        <label>Trop près de l'écran <input type="checkbox" data-key="detect_close"></label>
+        <div class="sub">
+          <small>Tolérance : épaules <output data-for="close_threshold" data-format="pct"></output> plus larges qu'à la calibration</small>
+          <input type="range" data-key="close_threshold" min="0.05" max="1" step="0.05" aria-label="Tolérance distance à l'écran">
+        </div>
+      </div>
+      <div class="field">
+        <label>Tête appuyée sur la main <input type="checkbox" data-key="detect_hand"></label>
+        <div class="sub">
+          <small>Main à moins de <output data-for="hand_threshold" data-format="num"></output> écarts d'yeux du visage (plus haut = plus sensible)</small>
+          <input type="range" data-key="hand_threshold" min="0.5" max="4" step="0.1" aria-label="Distance main-visage">
         </div>
       </div>
     </section>
@@ -191,6 +271,23 @@
         <small>Réglages et journal : <span class="path">%APPDATA%\AssistantPosture</span> (Windows) ou <span class="path">~/Library/Application Support/AssistantPosture</span> (Mac)</small>
       </div>
     </section>
+
+    <section class="card">
+      <h2>Coach IA (Hugging Face) <span id="coach-saved"></span></h2>
+      <div class="field">
+        <label for="coach-token">Votre token Hugging Face</label>
+        <small>Facultatif. Seuls les chiffres du jour (minutes, pourcentage, alertes) sont envoyés à Hugging Face, jamais d'image. Créez un token « Read » sur huggingface.co/settings/tokens. Laisser vide puis Enregistrer pour le supprimer.</small>
+        <div class="row">
+          <input id="coach-token" type="password" autocomplete="off" spellcheck="false" placeholder="hf_…">
+          <button id="coach-save" type="button">Enregistrer</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="coach-bill-to">Organisation à facturer</label>
+        <small>Facultatif : identifiant de l'organisation Hugging Face qui paie les appels (ex. votre école).</small>
+        <input id="coach-bill-to" type="text" data-key="coach_bill_to" autocomplete="off" spellcheck="false">
+      </div>
+    </section>
   </div>
 </main>
 
@@ -215,12 +312,13 @@ const STATUS = {
 
 const value = key => {
   const el = $(`[data-key=${key}]`);
-  return el.type === "checkbox" ? el.checked : +el.value;
+  return el.type === "checkbox" ? el.checked : el.type === "range" ? +el.value : el.value;
 };
 
 function fill(s) {
   $$("[data-key]").forEach(el => el.type === "checkbox" ? el.checked = s[el.dataset.key] : el.value = s[el.dataset.key]);
   setCorner(s.overlay_corner);
+  $("#coach-token").placeholder = s.coach_token_set ? "Token enregistré" : "hf_…";
   refresh();
 }
 
@@ -232,7 +330,8 @@ function setCorner(corner) {
 function refresh() {
   $$("output[data-for]").forEach(o => {
     const v = value(o.dataset.for);
-    o.textContent = o.dataset.format === "pct" ? pct(v) : `${v} s`;
+    o.textContent = o.dataset.format === "pct" ? pct(v) : o.dataset.format === "num" ? v.toFixed(1)
+      : o.dataset.format === "deg" ? `${v}°` : `${v} s`;
   });
   $$(".field").forEach(f => {
     const toggle = f.querySelector("input[type=checkbox]");
@@ -241,20 +340,55 @@ function refresh() {
 }
 
 function drawGauges(status) {
-  for (const [name, flag] of [["slouch", "detect_slouch"], ["head", "detect_head"]]) {
-    const g = $(`[data-gauge=${name}]`), dev = status[`${name}_dev`], limit = value(`${name}_threshold`);
+  const deg = v => `${v.toFixed(1)}°`;
+  for (const [name, flag, key = `${name}_threshold`, fmt = pct] of [["posture", "detect_posture"], ["slouch", "detect_slouch"],
+      ["head", "detect_head"], ["lean", "detect_lean", "lean_angle", deg], ["close", "detect_close"]]) {
+    const g = $(`[data-gauge=${name}]`), dev = status[`${name}_dev`], limit = value(key);
     const known = typeof dev === "number";
     g.classList.toggle("off", !value(flag));
     g.classList.toggle("over", known && dev > limit);
     // le seuil est au milieu de la jauge
     g.querySelector(".fill").style.width = known ? `${Math.min(Math.max(dev / (2 * limit), 0), 1) * 100}%` : "0";
-    g.querySelector("output").textContent = known ? `${pct(Math.max(dev, 0))} / seuil ${pct(limit)}` : "—";
+    g.querySelector("output").textContent = known ? `${fmt(Math.max(dev, 0))} / seuil ${fmt(limit)}` : "—";
   }
+}
+
+let placesKey = "";
+function drawPlaces(s) {
+  const names = Object.keys(s.places), n = s.places[s.place].length, key = JSON.stringify([names, s.place]);
+  setText($("#place-info"), n ? `${n} écran${n > 1 ? "s" : ""} calibré${n > 1 ? "s" : ""} pour ce lieu.`
+                              : "Pas encore calibré : asseyez-vous bien droit, puis « Calibrer ma posture ».");
+  $("#place-delete").disabled = names.length < 2;
+  if (key === placesKey) return;  // ne reconstruit pas la liste à chaque rafraîchissement (elle se refermerait)
+  placesKey = key;
+  $("#place").replaceChildren(...names.map(name => new Option(name, name, false, name === s.place)));
+}
+
+async function placeAction(action) {
+  try { drawPlaces(await post("/api/place", action)); }
+  catch (e) { flash(e.message, $("#place-saved")); }
+}
+
+function drawStats(st) {
+  const tracked = st ? st.good + st.bad : 0;
+  const min = Math.round(tracked / 60);
+  setText($("#stat-good"), tracked ? pct(st.good / tracked) : "—");
+  setText($("#stat-time"), tracked ? (min >= 60 ? `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, "0")}` : `${min} min`) : "—");
+  setText($("#stat-alerts"), st ? String(st.alerts) : "—");
+  const labels = { posture: "Posture affaissée", slouch: "Épaules affaissées", head: "Tête en avant", lean: "Penché sur le côté", close: "Trop près de l'écran", hand: "Tête appuyée sur la main" };
+  const top = st && Object.keys(labels).reduce((a, b) => (st[b] || 0) > (st[a] || 0) ? b : a);
+  const main = top && st[top] >= 60 ? labels[top] : "";
+  setText($("#stat-main"), main && `Motif le plus fréquent : ${main}`);
 }
 
 async function post(path, body = {}) {
   const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(await r.text());
+  if (!r.ok) {
+    const text = await r.text();
+    let message = text;
+    try { message = JSON.parse(text).error || text; } catch {}
+    throw new Error(message);
+  }
   return r.json();
 }
 
@@ -269,11 +403,11 @@ function save(update) {
     catch { flash("Échec de l'enregistrement"); }
   }, 250);
 }
-function flash(text) {
-  $("#saved").textContent = text;
-  $("#saved").style.opacity = 1;
+function flash(text, el = $("#saved")) {
+  el.textContent = text;
+  el.style.opacity = 1;
   clearTimeout(flashTimer);
-  flashTimer = setTimeout(() => $("#saved").style.opacity = 0, 1500);
+  flashTimer = setTimeout(() => el.style.opacity = 0, 2500);
 }
 
 function setText(el, text) { if (el.textContent !== text) el.textContent = text; }
@@ -287,17 +421,23 @@ $("#preview").addEventListener("toggle", () => {
 let filled = false;
 async function poll() {
   try {
-    const { status, settings } = await (await fetch("/api/state")).json();
+    const { status, settings, stats, calib_message } = await (await fetch("/api/state")).json();
+    const refs = settings.places[settings.place];
+    drawStats(stats);
+    drawPlaces(settings);
     if (!filled) {
       fill(settings);
       filled = true;
-      if (!settings.reference) $("#preview").open = true;  // premier lancement : utile pour se placer
+      if (!refs.length) $("#preview").open = true;  // premier lancement : utile pour se placer
     }
     const [tone, title, detail] = STATUS[status.state] || STATUS.starting;
     let text = detail;
+    if (status.state === "ok" && refs.length > 1) text = `Continuez comme ça (écran ${status.screen + 1}).`;
     if (status.state === "calibrating") text = `Restez droit encore ${Math.ceil(status.remaining)} s`;
     if (status.state === "bad" || status.state === "alert")
-      text = [status.slouch && "Épaules affaissées", status.head && "Tête en avant"].filter(Boolean).join(" · ");
+      text = [status.posture && "Posture affaissée", status.slouch && "Épaules affaissées", status.head && "Tête en avant", status.lean && "Penché sur le côté",
+              status.close && "Trop près de l'écran", status.hand && "Tête appuyée sur la main"].filter(Boolean).join(" · ");
+    if (calib_message && calib_message.age < 10 && status.state !== "calibrating") text = calib_message.text;
     $("#status").dataset.tone = tone;
     setText($("#status-title"), title);
     setText($("#status-detail"), text);
@@ -306,7 +446,9 @@ async function poll() {
     $("#video").hidden = !live;
     $("#video-off").hidden = live;
     $("#calibrate").disabled = !live || status.state === "calibrating";
-    $("#calibrate").textContent = settings.reference ? "Recalibrer" : "Calibrer ma posture";
+    $("#calibrate").textContent = refs.length ? "Recalibrer" : "Calibrer ma posture";
+    $("#calibrate").dataset.screens = refs.length;
+    $("#add-screen").disabled = $("#calibrate").disabled || !refs.length || refs.length >= 4;
     document.title = status.state === "alert" ? "● Redressez-vous" : "Assistant de posture";
   } catch {
     $("#status").dataset.tone = "idle";
@@ -324,8 +466,38 @@ $$("[data-corner]").forEach(b => b.addEventListener("click", () => {
   setCorner(b.dataset.corner);
   save({ overlay_corner: b.dataset.corner });
 }));
-$("#calibrate").addEventListener("click", () => post("/api/calibrate"));
+$("#calibrate").addEventListener("click", () => {
+  const n = +$("#calibrate").dataset.screens;
+  if (n > 1 && !confirm(`Recalibrer remplace les ${n} écrans de ce lieu par votre posture actuelle. Continuer ?`)) return;
+  post("/api/calibrate", { add: false });
+});
+$("#add-screen").addEventListener("click", () => post("/api/calibrate", { add: true }));
+$("#place").addEventListener("change", () => placeAction({ select: $("#place").value }));
+$("#place-add").addEventListener("click", () => {
+  const name = prompt("Nom du nouveau lieu (ex. Bureau, Maison, Café) :");
+  if (name && name.trim()) placeAction({ add: name.trim() });
+});
+$("#place-delete").addEventListener("click", () => {
+  const name = $("#place").value;
+  if (confirm(`Supprimer le lieu « ${name} » et ses calibrations ?`)) placeAction({ delete: name });
+});
 $("#test").addEventListener("click", () => post("/api/test-alert"));
+$("#coach-save").addEventListener("click", async () => {
+  try {
+    fill(await post("/api/settings", { coach_token: $("#coach-token").value.trim() }));
+    $("#coach-token").value = "";
+    flash("Enregistré", $("#coach-saved"));
+  } catch { flash("Token invalide (il commence par hf_)", $("#coach-saved")); }
+});
+$("#coach").addEventListener("click", async () => {
+  const btn = $("#coach"), out = $("#advice");
+  btn.disabled = true;
+  out.classList.remove("error");
+  out.textContent = "Le coach réfléchit…";
+  try { out.textContent = (await post("/api/coach")).advice; }  // textContent : la réponse du LLM n'est jamais interprétée comme du HTML
+  catch (e) { out.classList.add("error"); out.textContent = e.message; }
+  btn.disabled = false;
+});
 $("#quit").addEventListener("click", async () => {
   if (!confirm("Arrêter l'assistant de posture ? La détection ne tournera plus en arrière-plan.")) return;
   await post("/api/quit").catch(() => {});
