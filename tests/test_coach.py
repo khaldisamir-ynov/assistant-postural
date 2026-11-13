@@ -34,6 +34,19 @@ def test_sends_only_figures_and_bills_org(monkeypatch):
     assert req.get_header("Authorization") == "Bearer hf_" + "a" * 34
     prompt = json.loads(req.data)["messages"][1]["content"]
     assert '"bonne_posture_pct": 60' in prompt and '"minutes_tete_en_avant": 15' in prompt
+    assert "## Postures a surveiller" in prompt and "## Conseils" in prompt  # titres que la page met en forme
+
+
+def test_summary_adds_half_hours_and_previous_days_as_figures_only():
+    st = {**STATS, "slots": {"16:30": [600.0, 1200.0], "09:00": [1500.0, 0.0], "12:00": [60.0, 60.0]}}
+    days = [{"date": "2026-10-29", "minutes": 300, "good_pct": 80, "alerts": 2},
+            {"date": "2026-10-30", "minutes": 50, "good_pct": 60, "alerts": 4}]  # le jour en cours : deja dans les totaux
+    s = coach.summary(st, days)
+    assert s["par_demi_heure"] == [{"debut": "09:00", "minutes_suivies": 25, "bonne_posture_pct": 100},
+                                   {"debut": "16:30", "minutes_suivies": 30, "bonne_posture_pct": 33}]  # 12:00 : 2 min, trop peu
+    assert s["jours_precedents"] == [{"date": "2026-10-29", "minutes_suivies": 300, "bonne_posture_pct": 80,
+                                      "alertes": 2}]
+    assert coach.summary(STATS)["jours_precedents"] == []
 
 
 def test_rejected_token_gives_readable_error(monkeypatch):
