@@ -43,10 +43,11 @@ def data_url(path):
     return "data:image/jpeg;base64," + base64.b64encode(cv2.imencode(".jpg", img)[1]).decode()
 
 
-def parse(text):
-    """Premier mot attendu dans la reponse (accents et majuscules ignores), « ? » sinon."""
+def parse(text, answers=ANSWERS):
+    """Premier mot attendu dans la reponse (accents, majuscules, espaces/tirets/_ ignores), « ? » sinon."""
     text = unicodedata.normalize("NFD", text).encode("ascii", "ignore").decode().lower()
-    found = [(text.find(a), a) for a in ANSWERS if a in text]
+    text = text.replace(" ", "_").replace("-", "_")
+    found = [(text.find(a), a) for a in answers if a in text]
     return min(found)[1] if found else "?"
 
 
