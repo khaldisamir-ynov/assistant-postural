@@ -6,7 +6,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from posture import autostart, coach
+from posture import autostart, coach, stats
 from posture.state import change_place, state, update_settings, validate
 
 HOST, PORT = "127.0.0.1", 8765  # local uniquement : le flux webcam ne doit jamais sortir de la machine
@@ -63,6 +63,8 @@ class Handler(BaseHTTPRequestHandler):
             calib = state.calib_message
             self.send_json({"status": state.status, "settings": public_settings(), "stats": state.stats,
                             "calib_message": calib and {"text": calib["text"], "age": time.time() - calib["at"]}})
+        elif self.path == "/api/history":
+            self.send_json({"days": stats.last_days(state.stats)})
         elif self.path == "/video":
             self.stream_video()
         else:
@@ -121,13 +123,14 @@ class Handler(BaseHTTPRequestHandler):
             state.test_alert_until = time.time() + TEST_ALERT_SECONDS
             self.send_json({})
         elif self.path == "/api/coach":
-            stats, token = state.stats, state.settings["coach_token"]
+            today, token = state.stats, state.settings["coach_token"]
             if not token:
                 return self.send_json({"error": "Enregistrez d'abord votre token Hugging Face."}, 400)
-            if not stats or not stats["good"] + stats["bad"]:
+            if not today or not today["good"] + today["bad"]:
                 return self.send_json({"error": "Pas encore de statistiques aujourd'hui."}, 400)
             try:
-                self.send_json({"advice": coach.ask(stats, token, state.settings["coach_bill_to"])})
+                self.send_json({"advice": coach.ask(today, token, state.settings["coach_bill_to"],
+                                                    stats.last_days(today))})
             except RuntimeError as e:
                 self.send_json({"error": str(e)}, 502)
         elif self.path == "/api/quit":
