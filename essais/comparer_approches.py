@@ -73,7 +73,7 @@ def wilson(k, n, z=1.96):
 def app_class(status):
     """Motif de l'application -> classe (priorites de update_status : trop pres masque les autres)."""
     for flag, cls in (("close", "trop_pres"), ("hand", "menton_main"), ("lean", "penchee"),
-                      ("posture", "affaissee"), ("slouch", "affaissee"), ("head", "affaissee")):
+                      ("posture", "affaissee"), ("head", "affaissee")):
         if status.get(flag):
             return cls
     return "correcte"

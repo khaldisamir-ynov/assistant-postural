@@ -1,13 +1,13 @@
 import math
 
 from helpers import metrics
-from posture.core import deviations, evaluate_posture, hand_face_distance, valid_reference
+from posture.core import HEAD_THRESHOLD, SLOUCH_THRESHOLD, deviations, hand_face_distance, valid_reference
 
 REF = metrics((0.45, 0.30), (0.55, 0.30), (0.35, 0.50), (0.65, 0.50))
 
 
 def test_reference_posture_is_ok():
-    assert evaluate_posture(REF, REF) == (False, False)
+    assert deviations(REF, REF)[:2] == (0, 0)
 
 
 def test_mirror_gives_same_metrics():
@@ -17,13 +17,14 @@ def test_mirror_gives_same_metrics():
 def test_slouch_only():
     # epaules et oreilles descendent ensemble de 0.06 (20 % de la largeur d'epaules)
     current = metrics((0.45, 0.36), (0.55, 0.36), (0.35, 0.56), (0.65, 0.56))
-    assert evaluate_posture(current, REF) == (True, False)
+    assert deviations(current, REF)[1] < HEAD_THRESHOLD
     assert abs(deviations(current, REF)[0] - 0.2) < 1e-9
 
 
 def test_head_forward_only():
     current = metrics((0.45, 0.36), (0.55, 0.36), (0.35, 0.50), (0.65, 0.50))
-    assert evaluate_posture(current, REF) == (False, True)
+    slouch_dev, head_dev = deviations(current, REF)[:2]
+    assert slouch_dev < SLOUCH_THRESHOLD and head_dev > HEAD_THRESHOLD
 
 
 def test_valid_reference():

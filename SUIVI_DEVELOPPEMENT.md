@@ -2,7 +2,7 @@
 
 **Objectif** : application locale qui aide à garder une bonne posture toute la journée au bureau, avec une alerte silencieuse et non intrusive.
 
-**Version actuelle** : 0.4.0 (Windows + macOS). Architecture et commandes dans le [README](README.md).
+**Version actuelle** : 1.0.0, premier MVP publié (Windows + macOS). Architecture et commandes dans le [README](README.md).
 
 ## Avancement
 
@@ -17,7 +17,7 @@
 | 7 | POC application locale : interface web + alerte silencieuse | ✅ Validé |
 | 8 | MVP : paquet Python, tests, arrière-plan (icône), signalement en escalade, exe, démarrage auto | ✅ Fait, publié (v0.2.0) |
 | 9 | Support macOS (Apple Silicon) : app construite par GitHub Actions | 🧪 Construit en CI, à tester sur un vrai Mac |
-| 10 | Modèle Hugging Face : essai profondeur (no-go), statistiques du jour, coach LLM, lissage, lieux, écrans multiples | ✅ Fait (0.4.0, non publié) |
+| 10 | Modèle Hugging Face : essai profondeur (no-go), statistiques du jour, coach LLM, lissage, lieux, écrans multiples | ✅ Fait, publié dans le MVP v1.0.0 |
 
 ## 0.4.0 : statistiques, coach IA Hugging Face, lissage, lieux et écrans multiples
 
@@ -263,6 +263,11 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
   - mesure actuelle (descente des épaules) : clavier signalé à 78 % et 57 % dans 2 séances.
 - Aucune ne remplit C1 et C2 : **détecteur retiré** (réglage, jauge, motif, rapport IA). La descente des épaules reste calculée, car elle sert à reconnaître l'écran regardé. Le compteur `slouch` reste dans les statistiques pour que les fichiers déjà écrits restent lisibles.
 - Corrigé au passage : la pastille « Redressez-vous » n'affichait pas le motif « Buste affaissé ».
+
+### 2026-11-13 : nettoyage
+- Retirés : le script d'origine `posture_assistant.py` (il signalait encore les épaules et doublait le paquet `posture`) et `core.evaluate_posture`, qu'il était seul à utiliser. Ils restent dans l'historique git.
+- `essais/rejouer.py` reprend la liste des motifs de `posture/stats.py` au lieu d'en garder une copie ; motif `slouch` mort retiré de `essais/comparer_approches.py`.
+- Aucune fonction inutilisée trouvée dans `posture/` et `essais/` ; pas de refonte plus large : le code fait ~4 400 lignes et le banc d'essai en dépend.
 
 ## Prochaines étapes
 
