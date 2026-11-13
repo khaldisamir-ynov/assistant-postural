@@ -1,6 +1,6 @@
 # Spécifications, critères de réussite, essais et démo
 
-Assistant de posture, version 0.4.0. Document de référence **avant toute nouvelle modification** : chaque amélioration doit dire quel critère elle vise, et se vérifier avec le protocole décrit ici.
+Assistant de posture, version 1.0.0 (MVP). Document de référence **avant toute nouvelle modification** : chaque amélioration doit dire quel critère elle vise, et se vérifier avec le protocole décrit ici.
 
 Historique et choix techniques : [SUIVI_DEVELOPPEMENT.md](SUIVI_DEVELOPPEMENT.md). Utilisation : [README.md](README.md).
 

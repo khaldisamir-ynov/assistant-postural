@@ -174,7 +174,6 @@ Sur Mac : mêmes commandes avec `.venv/bin/` au lieu de `.\.venv\Scripts\`. L'ap
 | `posture/coach.py` | Conseils d'un LLM Hugging Face à partir des compteurs |
 | `posture/autostart.py` | Lancement à l'ouverture de session (registre Windows ou LaunchAgent macOS) |
 | `posture/index.html` | Interface de configuration |
-| `posture_assistant.py` | Version script d'origine (fenêtre OpenCV) |
 
 **Principe** : avec une webcam de face, l'avachissement se voit à la descente des épaules et la tête en avant au rapprochement oreilles-épaules. Les mesures sont divisées par la largeur des épaules pour ne pas dépendre de la distance à la caméra.
 
