@@ -86,12 +86,6 @@ def axis_shortening(current, reference):
     return 1 - current[5] / reference[5] if len(current) > 5 and len(reference) > 5 else 0.0
 
 
-def evaluate_posture(current, reference, slouch_threshold=SLOUCH_THRESHOLD, head_threshold=HEAD_THRESHOLD):
-    """Retourne (slouching, head_forward)."""
-    slouch_dev, head_dev, _, _, _ = deviations(current, reference)
-    return slouch_dev > slouch_threshold, head_dev > head_threshold
-
-
 def valid_reference(ref):
     """Une reference exploitable : 3 a 6 nombres, tete au-dessus des epaules, largeur et longueurs non nulles."""
     return (isinstance(ref, (list, tuple)) and len(ref) in (3, 4, 5, 6)

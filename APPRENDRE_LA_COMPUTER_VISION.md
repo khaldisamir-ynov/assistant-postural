@@ -528,8 +528,8 @@ Puis, côté serveur (`posture/server.py`), les JPEG successifs sont envoyés au
 
 - `draw_landmarks` dessine **sur l'image BGR d'origine**, pas sur la copie RGB donnée au modèle. On garde une image « modèle » et une image « affichage ».
 - Le **JPEG** divise la taille par 10 à 20 (une image 640×480 brute pèse 900 Ko, un JPEG 30-60 Ko).
-- La version script `posture_assistant.py` utilise `cv2.imshow` et `cv2.waitKey` : c'est l'affichage de développement. `waitKey(1)` est obligatoire : c'est lui qui laisse OpenCV rafraîchir la fenêtre et lire le clavier.
-- Les polices `cv2.FONT_HERSHEY_*` ne gèrent que l'ASCII : pas d'accents dans les textes dessinés par OpenCV (d'où « Epaules affaissees » dans le script).
+- La première version, le script `posture_assistant.py` (retiré le 2026-11-13, visible dans l'historique git), utilisait `cv2.imshow` et `cv2.waitKey` : c'est l'affichage de développement. `waitKey(1)` est obligatoire : c'est lui qui laisse OpenCV rafraîchir la fenêtre et lire le clavier.
+- Les polices `cv2.FONT_HERSHEY_*` ne gèrent que l'ASCII : pas d'accents dans les textes dessinés par OpenCV (d'où « Epaules affaissees » dans ce script).
 
 ### 7.12 Tester de la vision sans webcam
 

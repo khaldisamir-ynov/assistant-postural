@@ -22,9 +22,9 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from posture import core, detector  # noqa: E402
+from posture.stats import REASONS  # noqa: E402
 from posture.state import DEFAULTS, state  # noqa: E402
 
-REASONS = ("posture", "head", "lean", "close", "hand", "axis")
 # Par etape : detection activee (reglage, tolerance) et postures notees -> (motifs requis, motifs admis en plus)
 STEPS = {
     1: ("detect_posture", "posture_threshold", {
