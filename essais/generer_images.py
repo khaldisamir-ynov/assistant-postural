@@ -32,6 +32,15 @@ PEOPLE = [
     "a broad-shouldered man in his thirties with a shaved head and tattoos, wearing a t-shirt, in a coworking space",
     "a slim teenage girl with freckles and red hair in a ponytail, in a cluttered student room",
     "a man in his forties with South Asian features and a turban, wearing a sweater, in a cafe",
+    # 2026-11-13 : cas difficiles pour MediaPipe (epaules cachees, lumiere, corpulence, silhouette inhabituelle)
+    "a heavy-set man in his fifties with dark skin, wearing a loose polo shirt, in a home office",
+    "a woman in her thirties with very long straight black hair falling over both shoulders, in a bright kitchen",
+    "a teenage boy with the hood of a dark hoodie pulled up over the head, in a dark room lit only by the screen",
+    "a man in his seventies with a white beard and a cardigan, strongly backlit by a sunny window behind him",
+    "a woman in her twenties with light skin and a high-collar winter coat and a thick scarf, in a cold office",
+    "a man in his thirties sitting in a wheelchair at a desk, Latino features, wearing a denim shirt, in a library",
+    "a petite woman in her fifties with East Asian features and a bob haircut, wearing a white blouse, under neon light",
+    "a man in his twenties with Middle Eastern features, curly hair and a cap, wearing a sleeveless top, in a garage",
 ]
 # « webcam » ou « video call » seuls : le modele dessine un ordinateur qui affiche la personne ; d'ou « raw frame »
 SCENE = ("Raw webcam frame, front-facing, camera at chest height just in front of the person: {person}, sitting upright "
