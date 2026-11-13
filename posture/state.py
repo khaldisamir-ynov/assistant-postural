@@ -20,17 +20,17 @@ else:
 SETTINGS_FILE = APP_DIR / "settings.json"
 
 CORNERS = ("top-left", "top-right", "bottom-left", "bottom-right")
-BOOLEANS = ("enabled", "detect_posture", "detect_slouch", "detect_head", "detect_lean", "detect_close", "detect_hand",
-            "show_pill")
+BOOLEANS = ("enabled", "detect_posture", "detect_head", "detect_lean", "detect_close", "detect_hand",
+            "detect_axis", "show_pill")
 RANGES = {
     "alert_delay": (1, 60),
     "posture_threshold": (0.01, 0.3),
     "escalation_delay": (5, 600),
-    "slouch_threshold": (0.01, 0.4),
     "head_threshold": (0.01, 0.5),
     "lean_angle": (2, 30),
     "close_threshold": (0.05, 1.0),
     "hand_threshold": (0.5, 4.0),
+    "axis_threshold": (0.01, 0.3),
 }
 # Coach : token Hugging Face de l'utilisateur (vide = pas de coach) et organisation facturee facultative
 PATTERNS = {"coach_token": r"(hf_[A-Za-z0-9]{30,60})?", "coach_bill_to": r"[A-Za-z0-9_-]{0,64}"}
@@ -41,9 +41,7 @@ DEFAULTS = {
     # Une detection par etape (1 : posture affaissee, 2 : penche). Les autres restent disponibles, revalidees une a une.
     "detect_posture": True,
     "posture_threshold": core.POSTURE_THRESHOLD,
-    "detect_slouch": False,
     "detect_head": False,
-    "slouch_threshold": core.SLOUCH_THRESHOLD,
     "head_threshold": core.HEAD_THRESHOLD,
     "detect_lean": True,                      # etape 2
     "lean_angle": core.LEAN_ANGLE,
@@ -51,6 +49,8 @@ DEFAULTS = {
     "close_threshold": core.CLOSE_THRESHOLD,
     "detect_hand": False,
     "hand_threshold": core.HAND_THRESHOLD,
+    "detect_axis": False,                     # axe tete -> bassin : C1 non atteint au banc
+    "axis_threshold": core.AXIS_THRESHOLD,
     "alert_delay": core.ALERT_DELAY_SECONDS,  # avant le halo
     "show_pill": True,
     "escalation_delay": 30,                   # halo -> pastille « Redressez-vous »
