@@ -66,7 +66,7 @@ Vous pouvez **fermer la page** : l'assistant continue de veiller en arrière-pla
 |-----------|-------------------|
 | Posture correcte | Rien. L'icône de l'assistant est **verte**. |
 | Mauvaise posture depuis 2 s | Un **fin liseré ambre** pulse doucement en haut de l'écran. |
-| Toujours mal installé 30 s plus tard | Une petite **pastille « Redressez-vous »** apparaît dans un coin et indique pourquoi : épaules affaissées, tête en avant, penché sur le côté (ou accoudé), trop près de l'écran, tête appuyée sur la main. |
+| Toujours mal installé 30 s plus tard | Une petite **pastille « Redressez-vous »** apparaît dans un coin et indique pourquoi : posture affaissée, tête en avant, penché sur le côté (ou accoudé), trop près de l'écran, tête appuyée sur la main. |
 | Vous vous redressez | Tout disparaît en douceur. |
 
 Le liseré et la pastille ne bloquent jamais la souris : vous pouvez cliquer à travers. Sur Mac, ils restent visibles sur tous les bureaux et par-dessus les apps en plein écran.
