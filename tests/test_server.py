@@ -75,3 +75,10 @@ def test_places_api(base_url):
     assert code == 200 and json.loads(body)["place"] == "Café"
     assert post_json(f"{base_url}/api/place", {"select": "Nulle part"})[0] == 400
     assert post_json(f"{base_url}/api/calibrate", {"add": "oui"})[0] == 400
+
+
+def test_history_lists_tracked_days(base_url):
+    from posture.stats import empty
+    state.stats = {**empty("2026-10-30"), "good": 120.0, "bad": 60.0}
+    code, body = call(f"{base_url}/api/history")
+    assert code == 200 and json.loads(body)["days"] == [{"date": "2026-10-30", "minutes": 3, "good_pct": 67, "alerts": 0}]

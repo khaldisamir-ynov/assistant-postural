@@ -4,7 +4,7 @@ import logging
 import statistics
 import time
 from collections import deque
-from datetime import date
+from datetime import datetime
 
 import cv2
 import mediapipe as mp
@@ -85,6 +85,7 @@ def _loop():
                 if state.viewers:  # apercu seulement si l'interface le regarde
                     if landmarks:
                         mp_drawing.draw_landmarks(frame, landmarks, mp_pose.POSE_CONNECTIONS)
+                        draw_axis(frame, landmarks.landmark)
                     state.jpeg = cv2.imencode(".jpg", frame)[1].tobytes()
                 else:
                     state.jpeg = None
@@ -95,8 +96,11 @@ def _loop():
                 hand_dist = statistics.median(seen) if len(seen) * 2 >= len(recent_hand) else None
                 bad_since = update_status(smoothed, s, bad_since, now, hand_dist)
                 # dt borne : une pause ou une webcam perdue ne compte pas comme du temps suivi
+                clock = datetime.now()
+                if state.stats and state.stats["date"] != clock.date().isoformat():
+                    stats.save(state.stats)  # minuit : la fin de la veille va dans l'historique avant la remise a zero
                 state.stats = stats.record(state.stats, prev_state, state.status, min(now - last_tick, 1.0),
-                                           date.today().isoformat())
+                                           clock.date().isoformat(), stats.slot_of(clock.hour, clock.minute))
                 last_tick = now
                 if now - saved_at > STATS_SAVE_PERIOD:
                     stats.save(state.stats)
@@ -106,6 +110,19 @@ def _loop():
         stats.save(state.stats)
         if cap:
             cap.release()
+
+
+def draw_axis(frame, lm):
+    """Axe haut de la tete -> milieu des hanches, coupe au bas de l'image (hanches souvent hors champ)."""
+    h, w = frame.shape[:2]
+    top = core.top_of_head(*[(lm[i].x, lm[i].y) for i in (core.LEFT_EYE, core.RIGHT_EYE)])
+    hip = [(lm[core.LEFT_HIP].x + lm[core.RIGHT_HIP].x) / 2, (lm[core.LEFT_HIP].y + lm[core.RIGHT_HIP].y) / 2]
+    if hip[1] > 1 and hip[1] > top[1]:  # point ramene sur le bord bas, le long de l'axe
+        hip = [top[0] + (hip[0] - top[0]) * (1 - top[1]) / (hip[1] - top[1]), 1.0]
+    a, b = (int(top[0] * w), int(top[1] * h)), (int(hip[0] * w), min(int(hip[1] * h), h - 1))
+    cv2.line(frame, a, b, (255, 255, 255), 2)
+    for p in (a, b):
+        cv2.circle(frame, p, 7, (40, 40, 230), -1)
 
 
 def update_status(metrics, s, bad_since, now, hand_dist=None):
@@ -149,20 +166,21 @@ def update_status(metrics, s, bad_since, now, hand_dist=None):
     # si deux ecrans proches se confondent en usage reel
     def distance(ref):
         slouch_dev, head_dev, _, _, shortening = core.deviations(metrics, ref)
-        return max(abs(slouch_dev) / s["slouch_threshold"], abs(head_dev) / s["head_threshold"],
+        return max(abs(slouch_dev) / core.SLOUCH_THRESHOLD, abs(head_dev) / s["head_threshold"],
                    abs(shortening) / s["posture_threshold"])
     screen = min(range(len(refs)), key=lambda i: distance(refs[i]))
-    slouch_dev, head_dev, lean_dev, close_dev, posture_dev = core.deviations(metrics, refs[screen])
+    _, head_dev, lean_dev, close_dev, posture_dev = core.deviations(metrics, refs[screen])
+    axis_dev = core.axis_shortening(metrics, refs[screen])
     margin = HYSTERESIS if bad_since is not None else 1.0
     posture = s["detect_posture"] and posture_dev > s["posture_threshold"] * margin
     close = s["detect_close"] and close_dev > s["close_threshold"] * margin
     # Trop pres : la perspective fausse les mesures epaules/tete, on ne signale que la distance
-    slouch = not close and s["detect_slouch"] and slouch_dev > s["slouch_threshold"] * margin
     head = not close and s["detect_head"] and head_dev > s["head_threshold"] * margin
+    axis = not close and s["detect_axis"] and axis_dev > s["axis_threshold"] * margin
     lean = s["detect_lean"] and lean_dev > s["lean_angle"] * margin
     # Distance : plus petite = pire, donc la marge s'applique dans l'autre sens
     hand = s["detect_hand"] and hand_dist is not None and hand_dist < s["hand_threshold"] / margin
-    if not (posture or slouch or head or lean or close or hand):
+    if not (posture or head or lean or close or hand or axis):
         bad_since = None
     elif bad_since is None:
         bad_since = now
@@ -170,8 +188,9 @@ def update_status(metrics, s, bad_since, now, hand_dist=None):
     state.status = {
         "state": "ok" if bad_since is None else "alert" if now >= alert_since else "bad",
         "posture": posture, "posture_dev": posture_dev,
-        "slouch": slouch, "head": head, "lean": lean, "close": close, "hand": hand, "hand_dist": hand_dist,
-        "slouch_dev": slouch_dev, "head_dev": head_dev,
+        "head": head, "lean": lean, "close": close, "hand": hand, "hand_dist": hand_dist,
+        "axis": axis, "axis_dev": axis_dev,
+        "head_dev": head_dev,
         "lean_dev": lean_dev, "close_dev": close_dev, "alert_since": alert_since,
         "screen": screen,
     }
