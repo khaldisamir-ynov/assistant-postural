@@ -6,37 +6,55 @@
 <title>Assistant de posture</title>
 <style>
   :root {
-    --bg: #f4f5f7; --card: #fff; --text: #1d2330; --muted: #667085; --border: #e3e6eb; --track: #eceef2;
-    --ok: #1f9d55; --warn: #c98a12; --alert: #e0782b; --idle: #98a2b3; --accent: #3b5bdb; --amber: #f0a030;
+    --bg: #f3f5f9; --card: #fff; --text: #172033; --muted: #64708a; --border: #e4e8ef; --track: #edf0f5;
+    --ok: #16a37a; --warn: #d4920f; --alert: #e5683a; --idle: #9aa4b7; --accent: #4f5bd5; --accent-soft: #eceefd; --amber: #f0a030;
+    --shadow: 0 1px 2px rgb(16 24 40 / .04), 0 4px 16px rgb(16 24 40 / .05);
     color-scheme: light dark;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #111418; --card: #1a1e24; --text: #e6e8eb; --muted: #98a2b3; --border: #2a2f37; --track: #262b33; --accent: #748ffc; }
+    :root { --bg: #0f1218; --card: #171b23; --text: #e7eaf0; --muted: #98a2b5; --border: #262c37; --track: #232934;
+            --accent: #8b95f7; --accent-soft: #232846; --shadow: 0 1px 2px rgb(0 0 0 / .3); }
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
-  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 48px; display: grid; gap: 16px; grid-template-columns: 1.25fr 1fr; align-items: start; }
-  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
-  .col { display: grid; gap: 16px; }
-  header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  header h1 { font-size: 19px; margin: 0; font-weight: 650; }
-  header p { margin: 0; color: var(--muted); font-size: 13px; }
-  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 4px; font-weight: 600; display: flex; justify-content: space-between; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+
+  /* En-tête et onglets */
+  .top { position: sticky; top: 0; z-index: 1; background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+  .top-in { max-width: 1120px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+  .brand svg { width: 34px; height: 34px; flex: none; }
+  .brand h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: -.01em; }
+  .brand p { margin: 0; color: var(--muted); font-size: 12px; }
+  nav { display: flex; gap: 4px; padding: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+  nav a { padding: 6px 14px; border-radius: 9px; color: var(--muted); text-decoration: none; font-weight: 500; font-size: 14px; }
+  nav a:hover { color: var(--text); }
+  nav a[aria-current=page] { background: var(--accent-soft); color: var(--accent); }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 48px; }
+  .view { display: grid; gap: 16px; grid-template-columns: 1.2fr 1fr; align-items: start; }
+  .view.single { grid-template-columns: minmax(0, 760px); justify-content: center; }
+  @media (max-width: 880px) { .view { grid-template-columns: 1fr; } }
+  .col { display: grid; gap: 16px; min-width: 0; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 4px; font-weight: 650; display: flex; justify-content: space-between; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 22px; box-shadow: var(--shadow); min-width: 0; }
 
   /* État */
-  .status { display: flex; align-items: center; gap: 16px; }
-  .status .dot { width: 44px; height: 44px; border-radius: 50%; background: var(--idle); flex: none; position: relative; transition: background .4s; }
-  .status .dot::after { content: ""; position: absolute; inset: 15px; border-radius: 50%; background: var(--card); opacity: .9; }
-  .status[data-tone=ok] .dot { background: var(--ok); }
-  .status[data-tone=warn] .dot { background: var(--warn); }
-  .status[data-tone=alert] .dot { background: var(--alert); animation: pulse 3s ease-in-out infinite; }
-  @keyframes pulse { 50% { opacity: .5; } }
-  .status strong { display: block; font-size: 20px; font-weight: 650; }
+  .status { display: flex; align-items: center; gap: 16px; padding: 16px; margin: -6px -6px 0; border-radius: 14px; background: var(--track); transition: background .4s; }
+  .status .dot { --c: var(--idle); width: 46px; height: 46px; border-radius: 50%; background: var(--c); flex: none; position: relative; transition: background .4s; box-shadow: 0 0 0 6px color-mix(in srgb, var(--c) 20%, transparent); }
+  .status .dot::after { content: ""; position: absolute; inset: 16px; border-radius: 50%; background: #fff; opacity: .9; }
+  .status[data-tone=ok] { background: color-mix(in srgb, var(--ok) 10%, var(--card)); }
+  .status[data-tone=warn] { background: color-mix(in srgb, var(--warn) 10%, var(--card)); }
+  .status[data-tone=alert] { background: color-mix(in srgb, var(--alert) 12%, var(--card)); }
+  .status[data-tone=ok] .dot { --c: var(--ok); }
+  .status[data-tone=warn] .dot { --c: var(--warn); }
+  .status[data-tone=alert] .dot { --c: var(--alert); animation: pulse 3s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .55; } }
+  .status strong { display: block; font-size: 20px; font-weight: 700; }
   .status span { color: var(--muted); font-size: 14px; }
 
-  .gauges { display: grid; gap: 14px; margin-top: 20px; }
-  .gauge-head { display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; }
+  .gauges { display: grid; gap: 14px; margin-top: 22px; }
+  .gauge-head { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; font-weight: 500; }
   .gauge-head output { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
   .track { position: relative; height: 8px; margin-top: 6px; border-radius: 4px; background: var(--track); overflow: hidden; }
   .track .fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 4px; background: var(--ok); transition: width .4s, background .4s; }
@@ -46,20 +64,71 @@
   .gauges small { color: var(--muted); font-size: 12px; }
 
   .actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
-  button { font: inherit; border-radius: 10px; padding: 9px 16px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+  button, .button { font: inherit; border-radius: 10px; padding: 9px 16px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; text-decoration: none; transition: border-color .15s, filter .15s; }
   button:hover:not(:disabled) { border-color: var(--muted); }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
-  button.ghost { border-color: transparent; color: var(--muted); }
+  .primary { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; font-weight: 600; }
+  .primary:hover:not(:disabled) { filter: brightness(1.08); }
+  button.ghost { border-color: transparent; background: transparent; color: var(--muted); }
   button:disabled { opacity: .5; cursor: not-allowed; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  details summary { cursor: pointer; font-weight: 500; list-style: none; display: flex; justify-content: space-between; }
-  details summary::after { content: "Afficher"; color: var(--accent); font-weight: 400; font-size: 14px; }
+  details summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: "Afficher"; color: var(--accent); font-weight: 500; font-size: 14px; }
   details[open] summary::after { content: "Masquer"; }
-  .video { margin-top: 14px; aspect-ratio: 4 / 3; border-radius: 10px; background: #0b0d10; overflow: hidden; display: grid; place-items: center; color: #98a2b3; }
+  .video { margin-top: 14px; aspect-ratio: 4 / 3; border-radius: 12px; background: #0b0d10; overflow: hidden; display: grid; place-items: center; color: #98a2b3; }
   .video > * { grid-area: 1 / 1; }
   .video img { width: 100%; height: 100%; object-fit: cover; }
   .video p { margin: 0; }
+
+  /* Aujourd'hui : anneau du score + chiffres */
+  .score { display: flex; align-items: center; gap: 22px; margin-top: 12px; }
+  .ring { --p: 0; width: 148px; aspect-ratio: 1; flex: none; border-radius: 50%; display: grid; place-items: center; text-align: center;
+          background: radial-gradient(closest-side, var(--card) 78%, transparent 79%), conic-gradient(var(--ok) calc(var(--p) * 1%), var(--track) 0); }
+  .ring strong { display: block; font-size: 28px; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .ring span { font-size: 12px; color: var(--muted); }
+  .stats { display: grid; gap: 10px; flex: 1; }
+  .stats div { font-size: 13px; color: var(--muted); padding: 10px 14px; border-radius: 12px; background: var(--track); }
+  .stats div strong { display: block; font-size: 20px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .reasons { display: grid; gap: 10px; }
+  .reasons div { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; }
+  .reasons i { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
+  .reasons i b { display: block; height: 100%; border-radius: 3px; background: var(--alert); }
+  .reasons span + span { color: var(--muted); font-variant-numeric: tabular-nums; }
+  /* Deroule par demi-heure et 7 derniers jours : barres simples, vert = bonne posture, orange = mauvaise */
+  .chart-title { margin: 22px 0 8px; font-size: 13px; color: var(--text); font-weight: 600; }
+  .chart-empty { font-size: 13px; color: var(--muted); margin: 0; }
+  .bars { display: flex; align-items: flex-end; gap: 3px; height: 80px; border-bottom: 1px solid var(--border); }
+  .bars .bar { flex: 1 1 0; min-width: 4px; max-width: 28px; display: flex; flex-direction: column-reverse; border-radius: 4px 4px 0 0; overflow: hidden; }
+  .bars .good { background: var(--ok); }
+  .bars .bad { background: var(--alert); }
+  .bars-axis { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; background: var(--ok); }
+  .legend span + span::before { background: var(--alert); }
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; }
+  .days .day { display: grid; gap: 4px; justify-items: center; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .days .dcol { width: 100%; max-width: 34px; height: 64px; background: var(--track); border-radius: 6px; display: flex; align-items: flex-end; overflow: hidden; }
+  .days .fill { width: 100%; background: var(--ok); }
+  .days .today { color: var(--text); font-weight: 600; }
+  .hint { display: block; margin-top: 10px; color: var(--muted); font-size: 13px; }
+
+  /* Rapport IA */
+  .report-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .report-head h2 { margin: 0; }
+  .report-head p { margin: 2px 0 0; font-size: 20px; font-weight: 700; }
+  .advice { margin-top: 20px; }
+  .advice:empty { display: none; }
+  .advice.error { color: var(--alert); }
+  .advice.loading { color: var(--muted); animation: pulse 1.6s ease-in-out infinite; }
+  .advice h3 { font-size: 15px; margin: 24px 0 10px; padding-left: 12px; border-left: 3px solid var(--accent); }
+  .advice h3:first-child { margin-top: 0; }
+  .advice ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .advice li { padding: 10px 14px; border-radius: 12px; background: var(--track); }
+  .advice p { margin: 0 0 8px; }
+  .empty-report { margin: 20px 0 0; padding: 28px; border: 1px dashed var(--border); border-radius: 14px; text-align: center; color: var(--muted); }
+  .privacy { display: block; margin-top: 16px; color: var(--muted); font-size: 12px; }
+  a { color: var(--accent); }
 
   /* Réglages */
   .field { padding: 14px 0; border-top: 1px solid var(--border); }
@@ -70,7 +139,7 @@
   .field.off .sub { opacity: .4; pointer-events: none; }
   input[type=range] { width: 100%; margin: 8px 0 0; accent-color: var(--accent); }
   input[type=checkbox] { appearance: none; margin: 0; width: 40px; height: 22px; border-radius: 11px; background: var(--border); position: relative; cursor: pointer; flex: none; transition: background .2s; }
-  input[type=checkbox]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  input[type=checkbox]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 2px rgb(0 0 0 / .2); }
   input[type=checkbox]:checked { background: var(--accent); }
   input[type=checkbox]:checked::after { transform: translateX(18px); }
 
@@ -84,210 +153,249 @@
   .screen button:hover::after { background: var(--border); }
   .screen [data-corner$=right] { justify-content: flex-end; }
   .screen [data-corner^=bottom] { align-items: flex-end; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
-  .stats div { font-size: 13px; color: var(--muted); }
-  .stats strong { display: block; font-size: 22px; font-weight: 650; color: var(--text); font-variant-numeric: tabular-nums; }
-  #stat-main { display: block; margin-top: 10px; color: var(--muted); font-size: 13px; }
-  .hint { display: block; margin-top: 10px; color: var(--muted); font-size: 13px; }
-  .advice { margin: 14px 0 0; white-space: pre-line; }
-  .advice:empty { display: none; }
-  .advice.error { color: var(--alert); }
   select, input[type=text], input[type=password] { font: inherit; width: 100%; margin-top: 8px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
-  .row { display: flex; gap: 8px; align-items: end; }
+  .row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+  .row select, .row input { flex: 1 1 160px; width: auto; }
   .row button { flex: none; }
   .path { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
   #saved, #coach-saved, #place-saved { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0; transition: opacity .4s; }
+  @media (max-width: 480px) { .score { flex-direction: column; align-items: stretch; } .ring { margin: 0 auto; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <div>
-      <h1>Assistant de posture</h1>
-      <p>Fonctionne en arrière-plan : vous pouvez fermer cet onglet. Son icône (près de l'horloge sous Windows, dans la barre des menus sur Mac) permet de revenir ici.</p>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="10" fill="var(--accent)"/><circle cx="17" cy="9.5" r="3.2" fill="#fff"/><path d="M17 14v12M11 17.5c2 1.5 10 1.5 12 0" stroke="#fff" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg>
+      <div>
+        <h1>Assistant de posture</h1>
+        <p>Tourne en arrière-plan : vous pouvez fermer cet onglet.</p>
+      </div>
     </div>
-    <button id="quit" class="ghost" type="button">Arrêter l'assistant</button>
-  </header>
+    <nav aria-label="Sections">
+      <a href="#aujourdhui">Aujourd'hui</a>
+      <a href="#rapport">Rapport IA</a>
+      <a href="#reglages">Réglages</a>
+    </nav>
+    <button id="quit" class="ghost" type="button">Arrêter</button>
+  </div>
+</header>
 
-  <div class="col">
+<main>
+  <div class="view" data-view="aujourdhui">
+    <div class="col">
+      <section class="card">
+        <div class="status" id="status" data-tone="idle" role="status">
+          <div class="dot" aria-hidden="true"></div>
+          <div><strong id="status-title">Connexion…</strong><span id="status-detail"></span></div>
+        </div>
+
+        <div class="gauges">
+          <div class="gauge" data-gauge="posture">
+            <div class="gauge-head"><span>Posture (tête → épaules)</span><output></output></div>
+            <div class="track"><div class="fill"></div><div class="mark"></div></div>
+          </div>
+          <div class="gauge" data-gauge="head">
+            <div class="gauge-head"><span>Tête</span><output></output></div>
+            <div class="track"><div class="fill"></div><div class="mark"></div></div>
+          </div>
+          <div class="gauge" data-gauge="axis">
+            <div class="gauge-head"><span>Axe tête → bassin</span><output></output></div>
+            <div class="track"><div class="fill"></div><div class="mark"></div></div>
+          </div>
+          <div class="gauge" data-gauge="lean">
+            <div class="gauge-head"><span>Inclinaison du cou</span><output></output></div>
+            <div class="track"><div class="fill"></div><div class="mark"></div></div>
+          </div>
+          <div class="gauge" data-gauge="close">
+            <div class="gauge-head"><span>Distance à l'écran</span><output></output></div>
+            <div class="track"><div class="fill"></div><div class="mark"></div></div>
+          </div>
+          <small>Écart à votre posture de référence. Le trait marque votre seuil de tolérance.</small>
+        </div>
+
+        <div class="actions">
+          <button id="calibrate" class="primary" type="button">Calibrer ma posture</button>
+          <button id="add-screen" type="button">Ajouter un écran</button>
+          <button id="test" type="button">Tester le signalement</button>
+        </div>
+        <small class="hint">Plusieurs écrans ? Tournez-vous vers l'autre écran, tenez-vous droit, puis « Ajouter un écran ».</small>
+      </section>
+
+      <section class="card">
+        <h2>Lieu de travail <span id="place-saved"></span></h2>
+        <div class="field">
+          <label for="place">Lieu actuel</label>
+          <small id="place-info"></small>
+          <div class="row">
+            <select id="place"></select>
+            <button id="place-add" type="button">Nouveau lieu…</button>
+            <button id="place-delete" class="ghost" type="button">Supprimer</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <details id="preview">
+          <summary>Aperçu webcam</summary>
+          <div class="video">
+            <p id="video-off">Aperçu indisponible</p>
+            <img id="video" alt="Aperçu de la webcam avec le squelette détecté">
+          </div>
+        </details>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="card">
+        <h2>Aujourd'hui</h2>
+        <div class="score">
+          <div class="ring" id="ring">
+            <div><strong id="stat-good">—</strong><span>en bonne posture</span></div>
+          </div>
+          <div class="stats">
+            <div><strong id="stat-time">—</strong>de suivi</div>
+            <div><strong id="stat-alerts">—</strong>alertes</div>
+          </div>
+        </div>
+        <div class="chart-title">Mauvaises postures du jour</div>
+        <div id="reasons"><p class="chart-empty">Aucune mauvaise posture relevée.</p></div>
+        <div class="chart-title">Déroulé de la journée, par demi-heure</div>
+        <div id="timeline"><p class="chart-empty">Rien de suivi pour l'instant aujourd'hui.</p></div>
+        <div class="legend"><span>bonne posture</span><span>mauvaise posture</span></div>
+        <div class="chart-title">7 derniers jours (% du temps en bonne posture)</div>
+        <div id="days"><p class="chart-empty">L'historique se remplit au fil des jours.</p></div>
+        <div class="actions">
+          <a class="button primary" href="#rapport">Voir le rapport IA de la journée</a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="view single" data-view="rapport" hidden>
     <section class="card">
-      <div class="status" id="status" data-tone="idle" role="status">
-        <div class="dot" aria-hidden="true"></div>
-        <div><strong id="status-title">Connexion…</strong><span id="status-detail"></span></div>
+      <div class="report-head">
+        <div>
+          <h2>Rapport IA</h2>
+          <p id="report-date">Votre journée</p>
+        </div>
+        <button id="coach" class="primary" type="button">Générer mon rapport</button>
       </div>
-
-      <div class="gauges">
-        <div class="gauge" data-gauge="posture">
-          <div class="gauge-head"><span>Posture (tête → épaules)</span><output></output></div>
-          <div class="track"><div class="fill"></div><div class="mark"></div></div>
-        </div>
-        <div class="gauge" data-gauge="slouch">
-          <div class="gauge-head"><span>Épaules</span><output></output></div>
-          <div class="track"><div class="fill"></div><div class="mark"></div></div>
-        </div>
-        <div class="gauge" data-gauge="head">
-          <div class="gauge-head"><span>Tête</span><output></output></div>
-          <div class="track"><div class="fill"></div><div class="mark"></div></div>
-        </div>
-        <div class="gauge" data-gauge="lean">
-          <div class="gauge-head"><span>Inclinaison du cou</span><output></output></div>
-          <div class="track"><div class="fill"></div><div class="mark"></div></div>
-        </div>
-        <div class="gauge" data-gauge="close">
-          <div class="gauge-head"><span>Distance à l'écran</span><output></output></div>
-          <div class="track"><div class="fill"></div><div class="mark"></div></div>
-        </div>
-        <small>Écart à votre posture de référence. Le trait marque votre seuil de tolérance.</small>
+      <div id="advice" class="advice" aria-live="polite"></div>
+      <div id="report-empty" class="empty-report">
+        Le coach analyse vos postures de la journée (durées, moments, tendance sur 7 jours) et vous propose des conseils.
+        <div id="report-token-hint" hidden>Commencez par enregistrer votre token Hugging Face dans les <a href="#reglages">Réglages</a>.</div>
       </div>
-
-      <div class="actions">
-        <button id="calibrate" class="primary" type="button">Calibrer ma posture</button>
-        <button id="add-screen" type="button">Ajouter un écran</button>
-        <button id="test" type="button">Tester le signalement</button>
-      </div>
-      <small class="hint">Plusieurs écrans ? Tournez-vous vers l'autre écran, tenez-vous droit, puis « Ajouter un écran ».</small>
-    </section>
-
-    <section class="card">
-      <h2>Aujourd'hui</h2>
-      <div class="stats">
-        <div><strong id="stat-good">—</strong>en bonne posture</div>
-        <div><strong id="stat-time">—</strong>suivi</div>
-        <div><strong id="stat-alerts">—</strong>alertes</div>
-      </div>
-      <small id="stat-main"></small>
-      <div class="actions">
-        <button id="coach" type="button">Demander un bilan au coach</button>
-      </div>
-      <p id="advice" class="advice" aria-live="polite"></p>
-    </section>
-
-    <section class="card">
-      <details id="preview">
-        <summary>Aperçu webcam</summary>
-        <div class="video">
-          <p id="video-off">Aperçu indisponible</p>
-          <img id="video" alt="Aperçu de la webcam avec le squelette détecté">
-        </div>
-      </details>
+      <small class="privacy">Seuls des chiffres agrégés (minutes, pourcentages, alertes) partent chez Hugging Face, jamais d'image.</small>
     </section>
   </div>
 
-  <div class="col">
-    <section class="card">
-      <h2>Lieu de travail <span id="place-saved"></span></h2>
-      <div class="field">
-        <label for="place">Lieu actuel</label>
-        <small id="place-info"></small>
-        <div class="row">
-          <select id="place"></select>
-          <button id="place-add" type="button">Nouveau lieu…</button>
-          <button id="place-delete" class="ghost" type="button">Supprimer</button>
+  <div class="view" data-view="reglages" hidden>
+    <div class="col">
+      <section class="card">
+        <h2>Détection <span id="saved"></span></h2>
+        <div class="field">
+          <label>Détection active <input type="checkbox" data-key="enabled"></label>
+          <small>Mettez en pause pendant une visio : la webcam est libérée.</small>
         </div>
-      </div>
-    </section>
+        <div class="field">
+          <label>Posture affaissée (étape 1) <input type="checkbox" data-key="detect_posture"></label>
+          <div class="sub">
+            <small>Raccourcissement de la hauteur tête → épaules toléré : <output data-for="posture_threshold" data-format="pct"></output> (plus bas = plus sensible). Couvre tête en avant et épaules affaissées.</small>
+            <input type="range" data-key="posture_threshold" min="0.01" max="0.3" step="0.005" aria-label="Tolérance posture affaissée">
+          </div>
+        </div>
+        <div class="field">
+          <label>Tête en avant <input type="checkbox" data-key="detect_head"></label>
+          <div class="sub">
+            <small>Tolérance : <output data-for="head_threshold" data-format="pct"></output> (plus bas = plus sensible)</small>
+            <input type="range" data-key="head_threshold" min="0.01" max="0.5" step="0.01" aria-label="Tolérance tête en avant">
+          </div>
+        </div>
+        <div class="field">
+          <label>Buste affaissé (axe tête → bassin) <input type="checkbox" data-key="detect_axis"></label>
+          <div class="sub">
+            <small>Raccourcissement toléré de la ligne haut de la tête → milieu des hanches : <output data-for="axis_threshold" data-format="pct"></output>. Expérimental : repère mieux l'avachissement, mais peut signaler le travail au clavier. Recalibrez après l'avoir activée.</small>
+            <input type="range" data-key="axis_threshold" min="0.01" max="0.3" step="0.005" aria-label="Tolérance buste affaissé">
+          </div>
+        </div>
+        <div class="field">
+          <label>Penché sur le côté / accoudé (étape 2) <input type="checkbox" data-key="detect_lean"></label>
+          <div class="sub">
+            <small>Inclinaison du cou tolérée : <output data-for="lean_angle" data-format="deg"></output> (plus bas = plus sensible)</small>
+            <input type="range" data-key="lean_angle" min="2" max="30" step="0.5" aria-label="Tolérance inclinaison du cou">
+          </div>
+        </div>
+        <div class="field">
+          <label>Trop près de l'écran <input type="checkbox" data-key="detect_close"></label>
+          <div class="sub">
+            <small>Tolérance : épaules <output data-for="close_threshold" data-format="pct"></output> plus larges qu'à la calibration</small>
+            <input type="range" data-key="close_threshold" min="0.05" max="1" step="0.05" aria-label="Tolérance distance à l'écran">
+          </div>
+        </div>
+        <div class="field">
+          <label>Tête appuyée sur la main <input type="checkbox" data-key="detect_hand"></label>
+          <div class="sub">
+            <small>Main à moins de <output data-for="hand_threshold" data-format="num"></output> écarts d'yeux du visage (plus haut = plus sensible)</small>
+            <input type="range" data-key="hand_threshold" min="0.5" max="4" step="0.1" aria-label="Distance main-visage">
+          </div>
+        </div>
+      </section>
+    </div>
 
-    <section class="card">
-      <h2>Détection <span id="saved"></span></h2>
-      <div class="field">
-        <label>Détection active <input type="checkbox" data-key="enabled"></label>
-        <small>Mettez en pause pendant une visio : la webcam est libérée.</small>
-      </div>
-      <div class="field">
-        <label>Posture affaissée (étape 1) <input type="checkbox" data-key="detect_posture"></label>
-        <div class="sub">
-          <small>Raccourcissement de la hauteur tête → épaules toléré : <output data-for="posture_threshold" data-format="pct"></output> (plus bas = plus sensible). Couvre tête en avant et épaules affaissées.</small>
-          <input type="range" data-key="posture_threshold" min="0.01" max="0.3" step="0.005" aria-label="Tolérance posture affaissée">
+    <div class="col">
+      <section class="card">
+        <h2>Signalement</h2>
+        <div class="field">
+          <label for="alert-delay">Halo après <output data-for="alert_delay" data-format="s"></output></label>
+          <small>Un liseré ambre pulse doucement en bord d'écran. Aucun son, aucune fenêtre, jamais de vol du focus.</small>
+          <input id="alert-delay" type="range" data-key="alert_delay" min="1" max="60" step="1">
         </div>
-      </div>
-      <div class="field">
-        <label>Épaules affaissées <input type="checkbox" data-key="detect_slouch"></label>
-        <div class="sub">
-          <small>Tolérance : <output data-for="slouch_threshold" data-format="pct"></output> (plus bas = plus sensible)</small>
-          <input type="range" data-key="slouch_threshold" min="0.01" max="0.4" step="0.01" aria-label="Tolérance épaules affaissées">
+        <div class="field">
+          <label>Rappel « Redressez-vous » <input type="checkbox" data-key="show_pill"></label>
+          <div class="sub">
+            <small>Si le halo persiste encore <output data-for="escalation_delay" data-format="s"></output>, une petite pastille indique le motif.</small>
+            <input type="range" data-key="escalation_delay" min="5" max="300" step="5" aria-label="Délai avant le rappel">
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label>Tête en avant <input type="checkbox" data-key="detect_head"></label>
-        <div class="sub">
-          <small>Tolérance : <output data-for="head_threshold" data-format="pct"></output> (plus bas = plus sensible)</small>
-          <input type="range" data-key="head_threshold" min="0.01" max="0.5" step="0.01" aria-label="Tolérance tête en avant">
+        <div class="field">
+          <label>Position</label>
+          <small>Le halo suit le bord, la pastille le coin.</small>
+          <div class="screen" role="radiogroup" aria-label="Coin de l'écran">
+            <button type="button" role="radio" data-corner="top-left" aria-label="En haut à gauche"></button>
+            <button type="button" role="radio" data-corner="top-right" aria-label="En haut à droite"></button>
+            <button type="button" role="radio" data-corner="bottom-left" aria-label="En bas à gauche"></button>
+            <button type="button" role="radio" data-corner="bottom-right" aria-label="En bas à droite"></button>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label>Penché sur le côté / accoudé (étape 2) <input type="checkbox" data-key="detect_lean"></label>
-        <div class="sub">
-          <small>Inclinaison du cou tolérée : <output data-for="lean_angle" data-format="deg"></output> (plus bas = plus sensible)</small>
-          <input type="range" data-key="lean_angle" min="2" max="30" step="0.5" aria-label="Tolérance inclinaison du cou">
-        </div>
-      </div>
-      <div class="field">
-        <label>Trop près de l'écran <input type="checkbox" data-key="detect_close"></label>
-        <div class="sub">
-          <small>Tolérance : épaules <output data-for="close_threshold" data-format="pct"></output> plus larges qu'à la calibration</small>
-          <input type="range" data-key="close_threshold" min="0.05" max="1" step="0.05" aria-label="Tolérance distance à l'écran">
-        </div>
-      </div>
-      <div class="field">
-        <label>Tête appuyée sur la main <input type="checkbox" data-key="detect_hand"></label>
-        <div class="sub">
-          <small>Main à moins de <output data-for="hand_threshold" data-format="num"></output> écarts d'yeux du visage (plus haut = plus sensible)</small>
-          <input type="range" data-key="hand_threshold" min="0.5" max="4" step="0.1" aria-label="Distance main-visage">
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="card">
-      <h2>Signalement</h2>
-      <div class="field">
-        <label for="alert-delay">Halo après <output data-for="alert_delay" data-format="s"></output></label>
-        <small>Un liseré ambre pulse doucement en bord d'écran. Aucun son, aucune fenêtre, jamais de vol du focus.</small>
-        <input id="alert-delay" type="range" data-key="alert_delay" min="1" max="60" step="1">
-      </div>
-      <div class="field">
-        <label>Rappel « Redressez-vous » <input type="checkbox" data-key="show_pill"></label>
-        <div class="sub">
-          <small>Si le halo persiste encore <output data-for="escalation_delay" data-format="s"></output>, une petite pastille indique le motif.</small>
-          <input type="range" data-key="escalation_delay" min="5" max="300" step="5" aria-label="Délai avant le rappel">
+      <section class="card">
+        <h2>Coach IA (Hugging Face) <span id="coach-saved"></span></h2>
+        <div class="field">
+          <label for="coach-token">Votre token Hugging Face</label>
+          <small>Facultatif, nécessaire pour le rapport IA. Seuls les chiffres du jour sont envoyés, jamais d'image. Créez un token « Read » sur huggingface.co/settings/tokens. Laisser vide puis Enregistrer pour le supprimer.</small>
+          <div class="row">
+            <input id="coach-token" type="password" autocomplete="off" spellcheck="false" placeholder="hf_…">
+            <button id="coach-save" type="button">Enregistrer</button>
+          </div>
         </div>
-      </div>
-      <div class="field">
-        <label>Position</label>
-        <small>Le halo suit le bord, la pastille le coin.</small>
-        <div class="screen" role="radiogroup" aria-label="Coin de l'écran">
-          <button type="button" role="radio" data-corner="top-left" aria-label="En haut à gauche"></button>
-          <button type="button" role="radio" data-corner="top-right" aria-label="En haut à droite"></button>
-          <button type="button" role="radio" data-corner="bottom-left" aria-label="En bas à gauche"></button>
-          <button type="button" role="radio" data-corner="bottom-right" aria-label="En bas à droite"></button>
+        <div class="field">
+          <label for="coach-bill-to">Organisation à facturer</label>
+          <small>Facultatif : identifiant de l'organisation Hugging Face qui paie les appels (ex. votre école).</small>
+          <input id="coach-bill-to" type="text" data-key="coach_bill_to" autocomplete="off" spellcheck="false">
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="card">
-      <h2>Système</h2>
-      <div class="field">
-        <label>Lancer à l'ouverture de session <input type="checkbox" data-key="autostart"></label>
-        <small>Réglages et journal : <span class="path">%APPDATA%\AssistantPosture</span> (Windows) ou <span class="path">~/Library/Application Support/AssistantPosture</span> (Mac)</small>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Coach IA (Hugging Face) <span id="coach-saved"></span></h2>
-      <div class="field">
-        <label for="coach-token">Votre token Hugging Face</label>
-        <small>Facultatif. Seuls les chiffres du jour (minutes, pourcentage, alertes) sont envoyés à Hugging Face, jamais d'image. Créez un token « Read » sur huggingface.co/settings/tokens. Laisser vide puis Enregistrer pour le supprimer.</small>
-        <div class="row">
-          <input id="coach-token" type="password" autocomplete="off" spellcheck="false" placeholder="hf_…">
-          <button id="coach-save" type="button">Enregistrer</button>
+      <section class="card">
+        <h2>Système</h2>
+        <div class="field">
+          <label>Lancer à l'ouverture de session <input type="checkbox" data-key="autostart"></label>
+          <small>Réglages et journal : <span class="path">%APPDATA%\AssistantPosture</span> (Windows) ou <span class="path">~/Library/Application Support/AssistantPosture</span> (Mac)</small>
         </div>
-      </div>
-      <div class="field">
-        <label for="coach-bill-to">Organisation à facturer</label>
-        <small>Facultatif : identifiant de l'organisation Hugging Face qui paie les appels (ex. votre école).</small>
-        <input id="coach-bill-to" type="text" data-key="coach_bill_to" autocomplete="off" spellcheck="false">
-      </div>
-    </section>
+      </section>
+    </div>
   </div>
 </main>
 
@@ -295,6 +403,7 @@
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const pct = v => `${Math.round(v * 100)} %`;
+const LABELS = { posture: "Posture affaissée", head: "Tête en avant", lean: "Penché sur le côté", close: "Trop près de l'écran", hand: "Tête appuyée sur la main", axis: "Buste affaissé" };
 
 // état serveur -> [ton, titre, détail]
 const STATUS = {
@@ -310,6 +419,17 @@ const STATUS = {
   alert:        ["alert", "Redressez-vous", ""],
 };
 
+// Onglets : l'ancre de l'adresse (#rapport…) garde l'onglet au rechargement
+function showView() {
+  const views = [...$$("[data-view]")].map(v => v.dataset.view);
+  const view = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : views[0];
+  $$("[data-view]").forEach(v => v.hidden = v.dataset.view !== view);
+  $$("nav a").forEach(a => a.setAttribute("aria-current", a.hash === `#${view}` ? "page" : "false"));
+}
+addEventListener("hashchange", showView);
+showView();
+setText($("#report-date"), new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }));
+
 const value = key => {
   const el = $(`[data-key=${key}]`);
   return el.type === "checkbox" ? el.checked : el.type === "range" ? +el.value : el.value;
@@ -319,6 +439,7 @@ function fill(s) {
   $$("[data-key]").forEach(el => el.type === "checkbox" ? el.checked = s[el.dataset.key] : el.value = s[el.dataset.key]);
   setCorner(s.overlay_corner);
   $("#coach-token").placeholder = s.coach_token_set ? "Token enregistré" : "hf_…";
+  $("#report-token-hint").hidden = s.coach_token_set;
   refresh();
 }
 
@@ -341,7 +462,7 @@ function refresh() {
 
 function drawGauges(status) {
   const deg = v => `${v.toFixed(1)}°`;
-  for (const [name, flag, key = `${name}_threshold`, fmt = pct] of [["posture", "detect_posture"], ["slouch", "detect_slouch"],
+  for (const [name, flag, key = `${name}_threshold`, fmt = pct] of [["posture", "detect_posture"], ["axis", "detect_axis"],
       ["head", "detect_head"], ["lean", "detect_lean", "lean_angle", deg], ["close", "detect_close"]]) {
     const g = $(`[data-gauge=${name}]`), dev = status[`${name}_dev`], limit = value(key);
     const known = typeof dev === "number";
@@ -369,16 +490,79 @@ async function placeAction(action) {
   catch (e) { flash(e.message, $("#place-saved")); }
 }
 
+const duration = min => min >= 60 ? `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, "0")}` : `${min} min`;
+
 function drawStats(st) {
   const tracked = st ? st.good + st.bad : 0;
-  const min = Math.round(tracked / 60);
   setText($("#stat-good"), tracked ? pct(st.good / tracked) : "—");
-  setText($("#stat-time"), tracked ? (min >= 60 ? `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, "0")}` : `${min} min`) : "—");
+  $("#ring").style.setProperty("--p", tracked ? Math.round(100 * st.good / tracked) : 0);
+  setText($("#stat-time"), tracked ? duration(Math.round(tracked / 60)) : "—");
   setText($("#stat-alerts"), st ? String(st.alerts) : "—");
-  const labels = { posture: "Posture affaissée", slouch: "Épaules affaissées", head: "Tête en avant", lean: "Penché sur le côté", close: "Trop près de l'écran", hand: "Tête appuyée sur la main" };
-  const top = st && Object.keys(labels).reduce((a, b) => (st[b] || 0) > (st[a] || 0) ? b : a);
-  const main = top && st[top] >= 60 ? labels[top] : "";
-  setText($("#stat-main"), main && `Motif le plus fréquent : ${main}`);
+  drawReasons(st);
+  drawTimeline(st);
+}
+
+// Mauvaises postures du jour, de la plus longue à la plus courte (une minute au moins)
+function drawReasons(st) {
+  const rows = st ? Object.keys(LABELS).filter(k => st[k] >= 60).sort((a, b) => st[b] - st[a]) : [];
+  const max = rows.length ? st[rows[0]] : 1;
+  redraw($("#reasons"), rows.map(k => `${k}:${Math.round(st[k] / 60)}`).join("|"), rows.length
+    ? `<div class="reasons">${rows.map(k => `<div><span>${LABELS[k]}</span><span>${duration(Math.round(st[k] / 60))}</span>` +
+        `<i><b style="width:${100 * st[k] / max}%"></b></i></div>`).join("")}</div>`
+    : `<p class="chart-empty">Aucune mauvaise posture relevée.</p>`);
+}
+
+// Redessine seulement si les chiffres changent (appele toutes les 0,5 s)
+function redraw(el, key, html) {
+  if (el.dataset.key !== key) { el.dataset.key = key; el.innerHTML = html; }
+}
+
+function drawTimeline(st) {
+  const slots = Object.entries((st && st.slots) || {}).sort();
+  const full = 30 * 60;  // une demi-heure entierement suivie = barre pleine
+  const bars = slots.map(([start, [g, b]]) => {
+    const t = g + b, mins = Math.round(t / 60);
+    const label = `${start} : ${mins} min suivies, ${t ? Math.round(100 * g / t) : 0} % en bonne posture`;
+    return `<div class="bar" title="${label}" style="height:${Math.max(4, 100 * Math.min(t, full) / full)}%">` +
+      `<div class="good" style="flex:${g}"></div><div class="bad" style="flex:${b}"></div></div>`;
+  }).join("");
+  const key = slots.map(([s, [g, b]]) => `${s}:${Math.round(g / 30)}:${Math.round(b / 30)}`).join("|");
+  redraw($("#timeline"), key, slots.length
+    ? `<div class="bars" role="img" aria-label="Temps en bonne et mauvaise posture par demi-heure">${bars}</div>` +
+      `<div class="bars-axis"><span>${slots[0][0]}</span><span>${slots[slots.length - 1][0]}</span></div>`
+    : `<p class="chart-empty">Rien de suivi pour l'instant aujourd'hui.</p>`);
+}
+
+async function drawDays() {
+  try {
+    const { days } = await (await fetch("/api/history")).json();
+    const today = new Date().toLocaleDateString("sv");  // AAAA-MM-JJ, en heure locale comme le serveur
+    const name = d => new Date(d + "T12:00").toLocaleDateString("fr-FR", { weekday: "short" });
+    const cols = days.map(d => `<div class="day${d.date === today ? " today" : ""}" title="${d.date} : ${d.minutes} min suivies, ${d.alerts} alertes">` +
+      `<span>${d.good_pct} %</span><div class="dcol"><div class="fill" style="height:${d.good_pct}%"></div></div><span>${name(d.date)}</span></div>`).join("");
+    redraw($("#days"), JSON.stringify(days), days.length
+      ? `<div class="days" role="img" aria-label="Pourcentage de bonne posture sur les derniers jours">${cols}</div>`
+      : `<p class="chart-empty">L'historique se remplit au fil des jours.</p>`);
+  } catch {}  // assistant arrete : le message d'etat le dit deja
+  setTimeout(drawDays, 60000);
+}
+drawDays();
+
+// Rapport du LLM : titres « ## » et puces « - » mis en forme, toujours via textContent (jamais interprété comme du HTML)
+function drawReport(text) {
+  const out = $("#advice"), bullet = /^([-*•]|\d+[.)])\s+/;
+  const el = (tag, txt) => Object.assign(document.createElement(tag), { textContent: txt });
+  let list = null;
+  out.replaceChildren();
+  for (const raw of text.split("\n")) {
+    const line = raw.replace(/\*\*/g, "").trim();
+    if (!line) continue;
+    if (line.startsWith("#")) { list = null; out.append(el("h3", line.replace(/^#+\s*/, ""))); }
+    else if (bullet.test(line)) {
+      if (!list) out.append(list = document.createElement("ul"));
+      list.append(el("li", line.replace(bullet, "")));
+    } else { list = null; out.append(el("p", line)); }
+  }
 }
 
 async function post(path, body = {}) {
@@ -435,8 +619,7 @@ async function poll() {
     if (status.state === "ok" && refs.length > 1) text = `Continuez comme ça (écran ${status.screen + 1}).`;
     if (status.state === "calibrating") text = `Restez droit encore ${Math.ceil(status.remaining)} s`;
     if (status.state === "bad" || status.state === "alert")
-      text = [status.posture && "Posture affaissée", status.slouch && "Épaules affaissées", status.head && "Tête en avant", status.lean && "Penché sur le côté",
-              status.close && "Trop près de l'écran", status.hand && "Tête appuyée sur la main"].filter(Boolean).join(" · ");
+      text = Object.keys(LABELS).filter(k => status[k]).map(k => LABELS[k]).join(" · ");
     if (calib_message && calib_message.age < 10 && status.state !== "calibrating") text = calib_message.text;
     $("#status").dataset.tone = tone;
     setText($("#status-title"), title);
@@ -492,10 +675,11 @@ $("#coach-save").addEventListener("click", async () => {
 $("#coach").addEventListener("click", async () => {
   const btn = $("#coach"), out = $("#advice");
   btn.disabled = true;
-  out.classList.remove("error");
-  out.textContent = "Le coach réfléchit…";
-  try { out.textContent = (await post("/api/coach")).advice; }  // textContent : la réponse du LLM n'est jamais interprétée comme du HTML
-  catch (e) { out.classList.add("error"); out.textContent = e.message; }
+  $("#report-empty").hidden = true;
+  out.className = "advice loading";
+  out.textContent = "Le coach analyse votre journée…";
+  try { drawReport((await post("/api/coach")).advice); out.className = "advice"; btn.textContent = "Actualiser le rapport"; }
+  catch (e) { out.className = "advice error"; out.textContent = e.message; }
   btn.disabled = false;
 });
 $("#quit").addEventListener("click", async () => {
