@@ -53,3 +53,14 @@ def test_hand_face_distance():
     assert abs(hand_face_distance(lm) - 1.5) < 1e-9
     lm[0] = P(x=0.50, y=0.30, visibility=0.1)
     assert hand_face_distance(lm) is None  # visage invisible
+
+
+def test_axis_head_to_hips():
+    from posture.core import axis_shortening, compute_metrics
+    eyes = (0.47, 0.27), (0.53, 0.27)  # haut de la tete estime a 0.27 - 1.5 * 0.06 = 0.18
+    upright = compute_metrics((0.45, 0.30), (0.55, 0.30), (0.35, 0.50), (0.65, 0.50), *eyes, (0.4, 1.38), (0.6, 1.38))
+    assert abs(upright[5] - 1.2 / 0.3) < 1e-9  # 1.2 de long pour 0.3 de largeur d'epaules
+    assert valid_reference(list(upright))
+    slumped = compute_metrics((0.45, 0.30), (0.55, 0.30), (0.35, 0.50), (0.65, 0.50), *eyes, (0.4, 1.32), (0.6, 1.32))
+    assert abs(axis_shortening(slumped, upright) - 0.05) < 1e-9
+    assert axis_shortening(slumped, upright[:5]) == 0.0  # calibration d'avant l'axe : pas de mesure

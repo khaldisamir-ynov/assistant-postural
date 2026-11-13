@@ -8,7 +8,7 @@ from posture.state import state
 TURNED = metrics((0.47, 0.30), (0.53, 0.30), (0.42, 0.50), (0.58, 0.50))  # tourne vers un autre ecran : epaules etroites
 
 # Detections des versions precedentes (desactivees par defaut depuis l'etape 1), testees une a une
-OTHERS = {"detect_posture": False, "detect_slouch": True, "detect_head": True, "detect_lean": True, "detect_close": True,
+OTHERS = {"detect_posture": False, "detect_head": True, "detect_lean": True, "detect_close": True,
           "detect_hand": True}
 GOOD = metrics((0.45, 0.30), (0.55, 0.30), (0.35, 0.50), (0.65, 0.50))
 HEAD_FORWARD = metrics((0.45, 0.36), (0.55, 0.36), (0.35, 0.50), (0.65, 0.50))
@@ -92,7 +92,7 @@ def test_lean_and_close_reasons():
     assert state.status["lean"] and not state.status["close"]
     # trop pres : epaules 33 % plus larges ; les ecarts epaules/tete, faussees par la perspective, ne sont pas signales
     update_status(metrics((0.40, 0.33), (0.60, 0.33), (0.30, 0.60), (0.70, 0.60)), s, None, 2.0)
-    assert state.status["close"] and not state.status["slouch"] and not state.status["head"]
+    assert state.status["close"] and not state.status["head"]
 
 
 def test_calibration_refused_if_moving_and_ignores_first_second():
@@ -127,7 +127,7 @@ SLUMPED = metrics((0.45, 0.33), (0.55, 0.33), (0.35, 0.52), (0.65, 0.52))  # tet
 def test_step1_slumped_posture_alerts_after_delay():
     s = {**state.settings, "places": {"Mon poste": [list(GOOD)]}}
     # etapes 1 et 2 actives par defaut, les autres detections desactivees
-    assert s["detect_posture"] and s["detect_lean"] and not (s["detect_slouch"] or s["detect_head"] or s["detect_close"]
+    assert s["detect_posture"] and s["detect_lean"] and not (s["detect_head"] or s["detect_close"]
                                                              or s["detect_hand"])
     update_status(GOOD, s, None, 1.0)
     assert state.status["state"] == "ok" and abs(state.status["posture_dev"]) < 1e-9
@@ -160,4 +160,16 @@ def test_step2_leaning_alerts_and_camera_shift_is_ignored():
     assert state.status["state"] == "ok"
     shifted = metrics((0.55, 0.40), (0.65, 0.40), (0.45, 0.60), (0.75, 0.60))  # toute l'image decalee
     update_status(shifted, s, None, 3.0)
+    assert state.status["state"] == "ok"
+
+
+def test_axis_flags_slumped_torso_only_when_enabled():
+    from posture.core import compute_metrics
+    eyes = (0.47, 0.27), (0.53, 0.27)
+    upright = compute_metrics((0.45, 0.30), (0.55, 0.30), (0.35, 0.50), (0.65, 0.50), *eyes, (0.4, 1.38), (0.6, 1.38))
+    slumped = compute_metrics((0.45, 0.30), (0.55, 0.30), (0.35, 0.50), (0.65, 0.50), *eyes, (0.4, 1.32), (0.6, 1.32))
+    s = {**state.settings, "places": {"Mon poste": [list(upright)]}, "detect_axis": True}
+    update_status(slumped, s, None, 1000.0)
+    assert state.status["axis"] and state.status["state"] == "bad"
+    update_status(slumped, {**s, "detect_axis": False}, None, 1000.0)
     assert state.status["state"] == "ok"
