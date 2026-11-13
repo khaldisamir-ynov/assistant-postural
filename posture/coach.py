@@ -1,4 +1,5 @@
-"""Coach : demande 3 conseils a un LLM Hugging Face a partir des statistiques du jour.
+"""Coach : demande un rapport de journee et des conseils a un LLM Hugging Face a partir des statistiques du jour (totaux, deroule par
+demi-heure) et des jours precedents.
 
 Seuls des chiffres agreges sont envoyes (jamais d'image). Le token est celui de l'utilisateur.
 """
@@ -17,32 +18,47 @@ MODEL = "Qwen/Qwen3.8-27B:cerebras"
 TIMEOUT = 30
 
 
-def summary(stats):
-    """Ce qui part chez Hugging Face : des minutes et des compteurs."""
+# Titres « ## » et puces « - » : la page les met en forme, sans jamais interpreter de HTML venant du LLM
+REPORT_FORMAT = ("« ## Bilan » (2 phrases : la journee en chiffres, comparee aux jours precedents s'il y en a), "
+                 "« ## Postures a surveiller » (une puce « - » par mauvaise posture notable, avec sa duree), "
+                 "« ## Moments de la journee » (puces : heures ou la posture se degrade ou est bonne), "
+                 "« ## Conseils » (3 puces courtes et concretes, adaptees a ces chiffres). "
+                 "Pas d'autre mise en forme, pas de gras.")
+
+SLOT_MIN_SECONDS = 5 * 60  # demi-heure suivie moins de 5 min : pourcentage trop incertain pour etre envoye
+
+
+def summary(stats, days=()):
+    """Ce qui part chez Hugging Face : des minutes, des pourcentages et des compteurs. days : stats.last_days()."""
     tracked = stats["good"] + stats["bad"]
     return {
         "minutes_suivies": round(tracked / 60),
         "bonne_posture_pct": round(100 * stats["good"] / tracked) if tracked else None,
         "alertes": stats["alerts"],
-        "minutes_epaules_affaissees": round(stats["slouch"] / 60),
         "minutes_tete_en_avant": round(stats["head"] / 60),
         "minutes_penche_sur_le_cote": round(stats["lean"] / 60),
         "minutes_trop_pres_de_l_ecran": round(stats["close"] / 60),
         "minutes_tete_appuyee_sur_la_main": round(stats["hand"] / 60),
         "minutes_posture_affaissee": round(stats["posture"] / 60),
+        "minutes_buste_affaisse": round(stats["axis"] / 60),
+        "par_demi_heure": [{"debut": slot, "minutes_suivies": round((g + b) / 60),
+                            "bonne_posture_pct": round(100 * g / (g + b))}
+                           for slot, (g, b) in sorted(stats.get("slots", {}).items()) if g + b >= SLOT_MIN_SECONDS],
+        "jours_precedents": [{"date": d["date"], "minutes_suivies": d["minutes"], "bonne_posture_pct": d["good_pct"],
+                              "alertes": d["alerts"]} for d in days if d["date"] != stats["date"]],
     }
 
 
-def ask(stats, token, bill_to=""):
+def ask(stats, token, bill_to="", days=()):
     """Retourne le texte du coach. Leve RuntimeError avec un message lisible par l'utilisateur."""
     body = {
         "model": MODEL,
         "messages": [
             {"role": "system", "content": "Tu es un coach en ergonomie de bureau. Reponds en francais, bref et concret."},
-            {"role": "user", "content": f"Statistiques de posture de ma journee : {json.dumps(summary(stats))}. "
-                                        "Donne-moi 3 conseils courts (une ligne chacun) adaptes a ces chiffres."},
+            {"role": "user", "content": f"Statistiques de posture de ma journee : {json.dumps(summary(stats, days))}. "
+                                        f"Redige mon rapport de journee avec exactement ces titres : {REPORT_FORMAT}"},
         ],
-        "max_tokens": 300,
+        "max_tokens": 700,
         "reasoning_effort": "none",  # Qwen3 : sinon la reflexion consomme les tokens et la reponse arrive vide
     }
     # User-Agent explicite : le pare-feu de Hugging Face renvoie 403 a celui de urllib par defaut
