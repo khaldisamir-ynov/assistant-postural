@@ -269,6 +269,12 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
 - `essais/rejouer.py` reprend la liste des motifs de `posture/stats.py` au lieu d'en garder une copie ; motif `slouch` mort retiré de `essais/comparer_approches.py`.
 - Aucune fonction inutilisée trouvée dans `posture/` et `essais/` ; pas de refonte plus large : le code fait ~4 400 lignes et le banc d'essai en dépend.
 
+### 2026-11-20 : avachi ou clavier, bascule de la tête (C15)
+- Piste du § 8 (priorité 1 bis) : au clavier la tête bascule, en s'avachissant elle ne devrait pas. Règle : épaules qui descendent de plus de *s* **et** bascule (nez par rapport aux oreilles, en écarts d'yeux) sous *b*. Critère C15 écrit avant l'essai (SPECIFICATIONS.md § 4.10), sonde hors ligne sur les 4 séances de bureau (`essais/sonde_bascule.py`), sans nouvel enregistrement.
+- Médianes (descente des épaules / bascule) : avachi 0,048 / +0,05, 0,019 / +0,04, 0,108 / +0,55, 0,083 / +0,25 ; clavier 0,055 / −0,04, −0,006 / +0,01, 0,051 / +0,46, 0,013 / +0,13 (30/10, A, B, C).
+- **L'hypothèse ne tient pas** : en s'avachissant, la tête bascule autant ou plus qu'au clavier, dans les 4 séances. Dans A, les épaules ne descendent que de 1,9 %. Aucun couple (*s*, *b*) ne passe dans les 4 séances (C15a) ; un couple choisi sur 3 séances échoue sur la 4e, dans les 4 cas (C15b).
+- Décision : piste écartée. Dans B, droit2 a déjà une bascule de +0,48 par rapport à la calibration : la tête dérive en position droite, ce qui rendrait la mesure fragile même si l'hypothèse tenait.
+
 ## Prochaines étapes
 
 - [ ] Tester l'app macOS sur un vrai Mac : lancement, autorisation caméra, icône de barre des menus, halo et pastille.
@@ -276,4 +282,5 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
 - [ ] Icône dédiée pour l'exe (actuellement l'icône PyInstaller par défaut).
 - [ ] Limites connues : écran principal seulement, position recalculée seulement au changement de coin (barre des tâches déplacée en cours de route non prise en compte).
 - [ ] Historique sur plusieurs jours ; bilan du coach proposé automatiquement en fin de journée.
-- [ ] Pistes : CI (tests + build de l'exe à chaque push), signature de l'exe (évite l'avertissement SmartScreen).
+- [ ] CI Windows écrite (`.github/workflows/windows.yml` : tests à chaque push, exe ajouté à la release sur un tag `v*`), pas encore lancée sur GitHub.
+- [ ] Piste : signature de l'exe (évite l'avertissement SmartScreen).

@@ -239,6 +239,25 @@ Aucun modèle ne réussit les 3 vidéos : **C14 non atteint, piste écartée.** 
 
 Les paires valables sont classées par marge (écart entre la pire mauvaise posture et la pire bonne posture), en unités de bruit. La paire proposée par défaut doit avoir une marge **au moins égale** à celle de la mesure actuelle (haut de la tête → épaules). Sinon, la mesure actuelle reste par défaut.
 
+### 4.10 Avachi ou clavier : bascule de la tête (C15), ajoutés le 2026-11-20 avant l'essai
+
+Constat (§ 6.6) : quand on s'avachit, les épaules descendent dans l'image, mais elles descendent aussi quand on regarde le clavier, d'où le retrait de la détection « épaules ». Différence attendue : au clavier, la tête **bascule** (le nez descend par rapport aux oreilles) ; quand on s'avachit, le haut du corps descend **sans** basculer, ou en relevant le menton pour garder l'écran en vue. C'est la piste « épaules qui descendent sans bascule de la tête » (§ 8, priorité 1 bis).
+
+**Mesures**, par rapport à la calibration (médiane de « droit » entre 4 et 7 s) :
+- descente des épaules, en largeurs d'épaules (celle de l'ancienne détection « épaules ») ;
+- bascule : (y du nez − y du milieu des oreilles) ÷ écart des yeux, en écart signé à la calibration (positif = nez qui descend).
+
+**Règle** : avachi si descente > *s* **et** bascule < *b*.
+
+**Jeu** : les 4 enregistrements de bureau (2026-10-30, 2026-11-13 A, B, C), image par image, sans les 2 premières secondes de chaque posture (comme les autres sondes). Outil : `essais/sonde_bascule.py`, sur une grille de *s* (2 à 10 %) et de *b* (−0,5 à +0,6 écart d'yeux).
+
+| ID | Critère |
+|----|---------|
+| C15a | Il existe **un seul couple** (*s*, *b*) auquel avache est signalé sur ≥ 90 % des images, et droit, droit2 et clavier sur ≤ 10 %, **dans chacun des 4 enregistrements** |
+| C15b | Pour ne pas juger sur les données qui ont servi à choisir : pour chaque enregistrement, le couple choisi sur les 3 autres (celui qui a la plus grande marge) remplit les mêmes seuils sur celui-là |
+
+Si C15 est atteint, la règle entre comme option désactivée par défaut, puis elle est confirmée sur un **nouvel** enregistrement de bureau en continu (`rejouer.py`). Sinon, la piste est écartée, et le résultat est noté au § 6.3.
+
 ---
 
 ## 5. Comment faire les essais
@@ -429,6 +448,7 @@ Les cas **téléphone** et **boisson** déclenchent « tête en avant ». La gé
 | Détection « épaules affaissées » activée (slouch) | Avachi vu dans 1 séance sur 3, mais clavier signalé (56 % et 99 %). Épaules qui se resserrent ou avancent en profondeur (z) : pas mieux (`essais/sonde_epaules.py`) | **Retirée** (2026-11-13) |
 | Repères suivis sur le buste, ligne front → buste (C13) | Points perdus au premier changement de posture (t-shirt uni) : 24 % des images mesurables | Écartée sous cette forme ; essai avec gommettes prêt, non enregistré |
 | Vidéos générées (Wan2.1, Wan2.2, LTX-2) au lieu de photos (C14) | Caméra qui zoome, personne qui change, avachis caricaturaux (> 100 % de raccourcissement, contre 2 à 4 % en vrai) | Écartée |
+| Avachi = épaules qui descendent sans bascule de la tête (C15, 2026-11-20) | La tête bascule autant ou plus en s'avachissant qu'au clavier, dans les 4 séances (bascule médiane +0,04 à +0,55 écart d'yeux contre −0,04 à +0,46) ; aucun couple de seuils commun, aucun couple choisi sur 3 séances ne passe la 4e (`essais/sonde_bascule.py`) | Écartée |
 
 ### 6.4 Webcam déplacée (C8), essai n° 1 du 2026-10-30
 
@@ -577,6 +597,6 @@ Point faible confirmé : **l'avachi**. Sur 3 des 4 séances, la hauteur tête-é
 | 1 | Regard vers le clavier. **Cause trouvée le 2026-11-06** : les 15 % d'images signalées sont toutes dans les transitions (1,3 s au début, en sortant de « tête en avant » ; 0,5 s à la fin). Le reste de la posture, environ 10 s, n'a aucune image signalée, et il n'y a aucune alerte. Correction du protocole, sans toucher aux critères ni à la détection : préparation portée de 4 à 6 s dans `enregistrer.py`. À confirmer avec l'enregistrement du § 5.5 | C1 clavier |
 | 2 | Dérive naturelle : référence qui suit lentement l'utilisateur quand il est droit, ou tolérance épaules adaptée au bruit mesuré pendant la calibration | C1 images |
 | 3 | Essais réels des écrans multiples et revérification de C5 en 0.4.0 | C5, C6 |
-| 1 bis | **Avachi** : seule mauvaise posture encore ratée (0 % dans 2 séances sur 4). Prochain essai : gommettes sur le buste (`enregistrer.py --gommettes`, C13), ou mesure combinée « épaules qui descendent sans bascule de la tête », à fixer avant l'essai et à valider sur un nouvel enregistrement | C2 avachi |
+| 1 bis | **Avachi** : seule mauvaise posture encore ratée (0 % dans 2 séances sur 4). Mesure combinée « épaules qui descendent sans bascule de la tête » écartée (C15, 2026-11-20 : la tête bascule aussi en s'avachissant). Reste : gommettes sur le buste (`enregistrer.py --gommettes`, C13) | C2 avachi |
 | 4 | ~~Téléphone et boisson par VLM~~ : C9 non atteint sur photos réelles, piste écartée (§ 6.3). Reste possible : détection de mains avec MediaPipe Hands si elles sont dans le champ. **Pas de VLM local** (décision du 2026-11-06) | C9 (§ 4.4) |
 | 5 | Essais sur d'autres personnes et d'autres webcams (les seuils actuels viennent d'une seule personne) | Validité de C1 et C2 |
