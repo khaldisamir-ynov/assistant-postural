@@ -6,7 +6,7 @@ import urllib.request
 
 import pytest
 
-from posture import server
+from posture import server, stats
 from posture.state import state
 
 
@@ -89,4 +89,5 @@ def test_history_lists_tracked_days(base_url):
     from posture.stats import empty
     state.stats = {**empty("2026-10-30"), "good": 120.0, "bad": 60.0}
     code, body = call(f"{base_url}/api/history")
-    assert code == 200 and json.loads(body)["days"] == [{"date": "2026-10-30", "minutes": 3, "good_pct": 67, "alerts": 0}]
+    assert code == 200 and json.loads(body)["days"] == [{"date": "2026-10-30", "minutes": 3, "good_pct": 67, "alerts": 0,
+                                                         "reasons": dict.fromkeys(stats.REASONS, 0)}]
