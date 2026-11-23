@@ -9,3 +9,4 @@ settings.json
 .env
 HUGGING-FACE.md
 essais/donnees/
+frontend/node_modules/

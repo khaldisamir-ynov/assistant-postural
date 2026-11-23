@@ -17,9 +17,10 @@ def test_levels_are_valid_ordered_and_on_slider_steps():
     for k in normal:
         sign = -1 if k == "hand_threshold" else 1  # main : plus haut = plus exigeant
         assert sign * souple[k] > sign * normal[k] > sign * exigeant[k], k
-    page = Path(state_module.__file__).with_name("index.html").read_text(encoding="utf-8")
+    # Curseurs de l'interface (frontend/src/lib/constants.ts), une detection par ligne
+    page = (Path(state_module.__file__).parents[1] / "frontend" / "src" / "lib" / "constants.ts").read_text(encoding="utf-8")
     for k in normal:  # sinon le curseur s'arrondit et n'affiche pas la valeur du niveau
-        low, step = map(float, re.search(rf'data-key="{k}" min="([\d.]+)" max="[\d.]+" step="([\d.]+)"', page).groups())
+        low, step = map(float, re.search(rf'setting: "{k}", min: ([\d.]+), max: [\d.]+, step: ([\d.]+)', page).groups())
         assert all(abs((lv[k] - low) / step - round((lv[k] - low) / step)) < 1e-9 for lv in LEVELS.values()), k
 
 
