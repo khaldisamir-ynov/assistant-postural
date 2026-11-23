@@ -95,6 +95,8 @@
   .reasons i { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
   .reasons i b { display: block; height: 100%; border-radius: 3px; background: var(--alert); }
   .reasons span + span { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .reasons small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+  .reasons + .chart-empty { margin-top: 12px; }
   /* Deroule par demi-heure et 7 derniers jours : barres simples, vert = bonne posture, orange = mauvaise */
   .chart-title { margin: 22px 0 8px; font-size: 13px; color: var(--text); font-weight: 600; }
   .chart-empty { font-size: 13px; color: var(--muted); margin: 0; }
@@ -113,9 +115,10 @@
   .days .today { color: var(--text); font-weight: 600; }
   .hint { display: block; margin-top: 10px; color: var(--muted); font-size: 13px; }
 
-  /* Rapport IA */
+  /* Rapport */
   .report-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .report-head h2 { margin: 0; }
+  .report-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .report-head p { margin: 2px 0 0; font-size: 20px; font-weight: 700; }
   .advice { margin-top: 20px; }
   .advice:empty { display: none; }
@@ -175,7 +178,7 @@
     </div>
     <nav aria-label="Sections">
       <a href="#aujourdhui">Aujourd'hui</a>
-      <a href="#rapport">Rapport IA</a>
+      <a href="#rapport">Rapport</a>
       <a href="#reglages">Réglages</a>
     </nav>
     <button id="quit" class="ghost" type="button">Arrêter</button>
@@ -256,18 +259,20 @@
           </div>
           <div class="stats">
             <div><strong id="stat-time">—</strong>de suivi</div>
+            <div><strong id="stat-bad">—</strong>en mauvaise posture</div>
             <div><strong id="stat-alerts">—</strong>alertes</div>
           </div>
         </div>
-        <div class="chart-title">Mauvaises postures du jour</div>
+        <div class="chart-title">Mauvaises postures du jour (durée · part du temps suivi)</div>
         <div id="reasons"><p class="chart-empty">Aucune mauvaise posture relevée.</p></div>
         <div class="chart-title">Déroulé de la journée, par demi-heure</div>
         <div id="timeline"><p class="chart-empty">Rien de suivi pour l'instant aujourd'hui.</p></div>
         <div class="legend"><span>bonne posture</span><span>mauvaise posture</span></div>
+        <small id="moments" class="hint" hidden></small>
         <div class="chart-title">7 derniers jours (% du temps en bonne posture)</div>
         <div id="days"><p class="chart-empty">L'historique se remplit au fil des jours.</p></div>
         <div class="actions">
-          <a class="button primary" href="#rapport">Voir le rapport IA de la journée</a>
+          <a class="button primary" href="#rapport">Voir le rapport de la journée</a>
         </div>
       </section>
     </div>
@@ -277,17 +282,20 @@
     <section class="card">
       <div class="report-head">
         <div>
-          <h2>Rapport IA</h2>
+          <h2>Rapport</h2>
           <p id="report-date">Votre journée</p>
         </div>
-        <button id="coach" class="primary" type="button">Générer mon rapport</button>
+        <div class="report-actions">
+          <button id="coach" class="primary" type="button">Générer mon rapport</button>
+          <button id="coach-ai" type="button" hidden>Rédiger avec l'IA</button>
+        </div>
       </div>
       <div id="advice" class="advice" aria-live="polite"></div>
       <div id="report-empty" class="empty-report">
-        Le coach analyse vos postures de la journée (durées, moments, tendance sur 7 jours) et vous propose des conseils.
-        <div id="report-token-hint" hidden>Commencez par enregistrer votre token Hugging Face dans les <a href="#reglages">Réglages</a>.</div>
+        Le rapport résume vos postures de la journée (durées, moments, tendance sur 7 jours) et vous propose 3 à 5 conseils adaptés à vos chiffres. Il est calculé sur votre ordinateur.
+        <div id="report-token-hint" hidden>Pour une version rédigée par une IA (Hugging Face), enregistrez un token dans les <a href="#reglages">Réglages</a>.</div>
       </div>
-      <small class="privacy">Seuls des chiffres agrégés (minutes, pourcentages, alertes) partent chez Hugging Face, jamais d'image.</small>
+      <small class="privacy">Le rapport est calculé sur votre ordinateur. Seulement si vous cliquez sur « Rédiger avec l'IA », des chiffres agrégés (minutes, pourcentages, alertes) partent chez Hugging Face, jamais d'image.</small>
     </section>
   </div>
 
@@ -372,10 +380,10 @@
       </section>
 
       <section class="card">
-        <h2>Coach IA (Hugging Face) <span id="coach-saved"></span></h2>
+        <h2>Rapport rédigé par une IA (Hugging Face) <span id="coach-saved"></span></h2>
         <div class="field">
           <label for="coach-token">Votre token Hugging Face</label>
-          <small>Facultatif, nécessaire pour le rapport IA. Seuls les chiffres du jour sont envoyés, jamais d'image. Créez un token « Read » sur huggingface.co/settings/tokens. Laisser vide puis Enregistrer pour le supprimer.</small>
+          <small>Facultatif : le rapport de base est calculé sur votre ordinateur, sans token. Avec un token, le bouton « Rédiger avec l'IA » fait rédiger le rapport par un LLM : seuls les chiffres du jour sont envoyés, jamais d'image. Créez un token « Read » sur huggingface.co/settings/tokens (comptes gratuits : crédits à acheter). Laisser vide puis Enregistrer pour le supprimer.</small>
           <div class="row">
             <input id="coach-token" type="password" autocomplete="off" spellcheck="false" placeholder="hf_…">
             <button id="coach-save" type="button">Enregistrer</button>
@@ -440,6 +448,7 @@ function fill(s) {
   setCorner(s.overlay_corner);
   $("#coach-token").placeholder = s.coach_token_set ? "Token enregistré" : "hf_…";
   $("#report-token-hint").hidden = s.coach_token_set;
+  $("#coach-ai").hidden = !s.coach_token_set;
   refresh();
 }
 
@@ -492,24 +501,44 @@ async function placeAction(action) {
 
 const duration = min => min >= 60 ? `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, "0")}` : `${min} min`;
 
-function drawStats(st) {
+function drawStats(st, settings) {
   const tracked = st ? st.good + st.bad : 0;
   setText($("#stat-good"), tracked ? pct(st.good / tracked) : "—");
   $("#ring").style.setProperty("--p", tracked ? Math.round(100 * st.good / tracked) : 0);
   setText($("#stat-time"), tracked ? duration(Math.round(tracked / 60)) : "—");
+  setText($("#stat-bad"), tracked ? duration(Math.round(st.bad / 60)) : "—");
   setText($("#stat-alerts"), st ? String(st.alerts) : "—");
-  drawReasons(st);
+  drawReasons(st, settings);
   drawTimeline(st);
 }
 
-// Mauvaises postures du jour, de la plus longue à la plus courte (une minute au moins)
-function drawReasons(st) {
-  const rows = st ? Object.keys(LABELS).filter(k => st[k] >= 60).sort((a, b) => st[b] - st[a]) : [];
-  const max = rows.length ? st[rows[0]] : 1;
-  redraw($("#reasons"), rows.map(k => `${k}:${Math.round(st[k] / 60)}`).join("|"), rows.length
-    ? `<div class="reasons">${rows.map(k => `<div><span>${LABELS[k]}</span><span>${duration(Math.round(st[k] / 60))}</span>` +
-        `<i><b style="width:${100 * st[k] / max}%"></b></i></div>`).join("")}</div>`
-    : `<p class="chart-empty">Aucune mauvaise posture relevée.</p>`);
+// Ce que mesure chaque détection (voir posture/core.py)
+const ABOUT = {
+  posture: "Hauteur tête → épaules plus courte qu'à la calibration : dos tassé ou tête avancée.",
+  head: "Cou « rentré » : oreilles plus proches des épaules qu'à la calibration.",
+  lean: "Cou incliné sur le côté, souvent en s'accoudant.",
+  close: "Épaules plus larges qu'à la calibration : vous êtes plus près de l'écran.",
+  hand: "Une main tout près du visage, comme le menton dans la main.",
+  axis: "Ligne haut de la tête → bassin raccourcie : buste affaissé.",
+};
+let pastDays = [];  // jours de /api/history (minutes par posture), pour la durée habituelle
+
+// Mauvaises postures du jour : les détections actives (même à 0) et toute posture relevée au moins une minute,
+// de la plus longue à la plus courte
+function drawReasons(st, settings) {
+  const tracked = st ? st.good + st.bad : 0, sec = k => st ? st[k] : 0;
+  const rows = Object.keys(LABELS).filter(k => settings[`detect_${k}`] || sec(k) >= 60).sort((a, b) => sec(b) - sec(a));
+  const off = Object.keys(LABELS).filter(k => !rows.includes(k));
+  const before = pastDays.filter(d => !st || d.date !== st.date);
+  const max = Math.max(...rows.map(sec), 1);
+  const html = (rows.length ? `<div class="reasons">${rows.map(k => {
+    const min = Math.round(sec(k) / 60), share = tracked ? ` · ${Math.round(100 * sec(k) / tracked)} %` : "";
+    const usual = before.length ? ` D'habitude : ${duration(Math.round(before.reduce((n, d) => n + d.reasons[k], 0) / before.length))} par jour.` : "";
+    return `<div><span>${LABELS[k]}</span><span>${duration(min)}${share}</span>` +
+      `<i><b style="width:${Math.round(100 * sec(k) / max)}%"></b></i><small>${ABOUT[k]}${usual}</small></div>`;
+  }).join("")}</div>` : "") + (off.length
+    ? `<p class="chart-empty">Non surveillées : ${off.map(k => LABELS[k]).join(", ")}. À activer dans les <a href="#reglages">Réglages</a>.</p>` : "");
+  redraw($("#reasons"), html, html);  // le texte affiché sert de clé : redessiné seulement s'il change
 }
 
 // Redessine seulement si les chiffres changent (appele toutes les 0,5 s)
@@ -531,11 +560,18 @@ function drawTimeline(st) {
     ? `<div class="bars" role="img" aria-label="Temps en bonne et mauvaise posture par demi-heure">${bars}</div>` +
       `<div class="bars-axis"><span>${slots[0][0]}</span><span>${slots[slots.length - 1][0]}</span></div>`
     : `<p class="chart-empty">Rien de suivi pour l'instant aujourd'hui.</p>`);
+  // Meilleure et pire demi-heure, suivies au moins 5 min, à égalité la plus tôt (même règle que le rapport)
+  const ok = slots.filter(([, [g, b]]) => g + b >= 300).map(([s, [g, b]]) => [s, Math.round(100 * g / (g + b))]);
+  const end = s => { const m = +s.slice(0, 2) * 60 + +s.slice(3) + 30; return `${s}-${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
+  const best = ok.reduce((a, x) => x[1] > a[1] ? x : a, ok[0]), worst = ok.reduce((a, x) => x[1] < a[1] ? x : a, ok[0]);
+  $("#moments").hidden = ok.length < 2;
+  if (ok.length >= 2) setText($("#moments"), `Meilleur moment : ${end(best[0])} (${best[1]} %) · plus difficile : ${end(worst[0])} (${worst[1]} %)`);
 }
 
 async function drawDays() {
   try {
     const { days } = await (await fetch("/api/history")).json();
+    pastDays = days;
     const today = new Date().toLocaleDateString("sv");  // AAAA-MM-JJ, en heure locale comme le serveur
     const name = d => new Date(d + "T12:00").toLocaleDateString("fr-FR", { weekday: "short" });
     const cols = days.map(d => `<div class="day${d.date === today ? " today" : ""}" title="${d.date} : ${d.minutes} min suivies, ${d.alerts} alertes">` +
@@ -548,7 +584,7 @@ async function drawDays() {
 }
 drawDays();
 
-// Rapport du LLM : titres « ## » et puces « - » mis en forme, toujours via textContent (jamais interprété comme du HTML)
+// Rapport (calculé sur le poste ou rédigé par le LLM) : titres « ## » et puces « - » mis en forme, toujours via textContent (jamais interprété comme du HTML)
 function drawReport(text) {
   const out = $("#advice"), bullet = /^([-*•]|\d+[.)])\s+/;
   const el = (tag, txt) => Object.assign(document.createElement(tag), { textContent: txt });
@@ -607,7 +643,7 @@ async function poll() {
   try {
     const { status, settings, stats, calib_message } = await (await fetch("/api/state")).json();
     const refs = settings.places[settings.place];
-    drawStats(stats);
+    drawStats(stats, settings);
     drawPlaces(settings);
     if (!filled) {
       fill(settings);
@@ -672,16 +708,18 @@ $("#coach-save").addEventListener("click", async () => {
     flash("Enregistré", $("#coach-saved"));
   } catch { flash("Token invalide (il commence par hf_)", $("#coach-saved")); }
 });
-$("#coach").addEventListener("click", async () => {
-  const btn = $("#coach"), out = $("#advice");
-  btn.disabled = true;
+async function report(body, waiting) {
+  const btns = [$("#coach"), $("#coach-ai")], out = $("#advice");
+  btns.forEach(b => b.disabled = true);
   $("#report-empty").hidden = true;
   out.className = "advice loading";
-  out.textContent = "Le coach analyse votre journée…";
-  try { drawReport((await post("/api/coach")).advice); out.className = "advice"; btn.textContent = "Actualiser le rapport"; }
+  out.textContent = waiting;
+  try { drawReport((await post("/api/coach", body)).advice); out.className = "advice"; $("#coach").textContent = "Actualiser le rapport"; }
   catch (e) { out.className = "advice error"; out.textContent = e.message; }
-  btn.disabled = false;
-});
+  btns.forEach(b => b.disabled = false);
+}
+$("#coach").addEventListener("click", () => report({}, "Calcul du rapport…"));
+$("#coach-ai").addEventListener("click", () => report({ source: "hf" }, "L'IA rédige votre rapport…"));
 $("#quit").addEventListener("click", async () => {
   if (!confirm("Arrêter l'assistant de posture ? La détection ne tournera plus en arrière-plan.")) return;
   await post("/api/quit").catch(() => {});
