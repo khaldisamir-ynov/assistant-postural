@@ -50,7 +50,7 @@ def start():
         from AppKit import NSApplication
         options["darwin_nsapplication"] = NSApplication.sharedApplication()  # celle de Tk : une seule boucle Cocoa
     icon = pystray.Icon("AssistantPosture", draw_icon(GREY), "Assistant de posture", menu=pystray.Menu(
-        pystray.MenuItem("Ouvrir les réglages", lambda: webbrowser.open(URL), default=True),
+        pystray.MenuItem("Ouvrir l'assistant", lambda: webbrowser.open(URL), default=True),
         pystray.MenuItem("Lieu de travail", pystray.Menu(lambda: (_place_item(n) for n in state.settings["places"]))),
         pystray.MenuItem("Pause", lambda: update_settings({"enabled": not state.settings["enabled"]}),
                          checked=lambda item: not state.settings["enabled"]),
