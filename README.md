@@ -43,7 +43,7 @@ Le premier démarrage prend quelques secondes. Une page s'ouvre dans votre navig
 
 ### 2. Calibrer votre bonne posture
 
-La page vous guide en 3 étapes et vous dit en direct si la webcam vous voit bien.
+La page vous guide en 3 étapes, avec votre image webcam juste à côté : elle vous dit en direct si la webcam vous voit bien, et un trait montre où doivent se trouver vos épaules.
 
 1. Asseyez-vous **bien droit**, face à l'écran, comme vous voudriez vous tenir.
 2. Vérifiez que votre **tête et vos épaules** sont visibles (« ✓ On vous voit bien »).
@@ -154,7 +154,7 @@ Le journal `posture.log` (dans le dossier de réglages indiqué plus haut) conti
 
 ## Pour les développeurs
 
-Python 3.9 à 3.12 (MediaPipe 0.10.21), Windows ou macOS.
+Python 3.9 à 3.12 (MediaPipe 0.10.21), Windows ou macOS. Pour modifier l'interface : Node 20.19 ou plus.
 
 ```powershell
 python -m venv .venv
@@ -162,6 +162,15 @@ python -m venv .venv
 .\.venv\Scripts\python -m posture                              # lancer
 .\.venv\Scripts\python -m pytest                               # tests
 .\build.ps1                                                    # tests + dist\AssistantPosture.exe
+```
+
+**Interface** (`frontend/`, React + shadcn/ui) : compilée en un seul fichier, `posture/index.html` (JS, CSS et police intégrés, rien n'est chargé depuis Internet). Le fichier compilé est versionné : lancer depuis les sources ne demande pas Node.
+
+```powershell
+npm --prefix frontend ci            # une fois
+npm --prefix frontend run dev       # page de développement (rechargement à chaud), branchée sur l'assistant lancé
+npm --prefix frontend run build     # régénère posture/index.html (à commiter)
+npm --prefix frontend run shadcn -- add <composant>   # ajouter un composant shadcn
 ```
 
 Sur Mac : mêmes commandes avec `.venv/bin/` au lieu de `.\.venv\Scripts\`. L'app Mac (`AssistantPosture-macOS.zip`) est construite par GitHub Actions ([`.github/workflows/macos.yml`](.github/workflows/macos.yml)) et ajoutée automatiquement à chaque release `v*`.
@@ -177,7 +186,8 @@ Sur Mac : mêmes commandes avec `.venv/bin/` au lieu de `.\.venv\Scripts\`. L'ap
 | `posture/stats.py` | Compteurs du jour (temps en bonne posture, alertes) |
 | `posture/coach.py` | Rapport de la journée à partir des compteurs : calculé sur le poste, ou rédigé par un LLM Hugging Face |
 | `posture/autostart.py` | Lancement à l'ouverture de session (registre Windows ou LaunchAgent macOS) |
-| `posture/index.html` | Interface de configuration |
+| `posture/index.html` | Interface de configuration, **générée** par `frontend/` (ne pas modifier à la main) |
+| `frontend/` | Sources de l'interface : React + TypeScript + Tailwind + composants [shadcn/ui](https://ui.shadcn.com) |
 
 **Principe** : avec une webcam de face, l'avachissement se voit à la descente des épaules et la tête en avant au rapprochement oreilles-épaules. Les mesures sont divisées par la largeur des épaules pour ne pas dépendre de la distance à la caméra.
 
