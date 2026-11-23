@@ -60,7 +60,13 @@
   .track .fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 4px; background: var(--ok); transition: width .4s, background .4s; }
   .track .mark { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: var(--muted); opacity: .6; }
   .gauge.over .fill { background: var(--amber); }
-  .gauge.off { opacity: .4; }
+  /* Guide du premier lancement, à la place des jauges tant que la posture n'est pas calibrée */
+  .steps { margin: 22px 0 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 16px; }
+  .steps li { counter-increment: step; display: grid; grid-template-columns: 32px 1fr; gap: 2px 12px; }
+  .steps li::before { content: counter(step); grid-row: span 2; width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; }
+  .steps span { color: var(--muted); font-size: 14px; }
+  .steps [data-check=ok] { color: var(--ok); font-weight: 600; }
+  .steps [data-check=warn] { color: var(--warn); font-weight: 600; }
   .gauges small { color: var(--muted); font-size: 12px; }
 
   .actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
@@ -146,6 +152,11 @@
   input[type=checkbox]:checked { background: var(--accent); }
   input[type=checkbox]:checked::after { transform: translateX(18px); }
 
+  /* Exigence : Souple / Normal / Exigeant */
+  .segmented { display: inline-flex; gap: 3px; margin-top: 10px; padding: 3px; border-radius: 11px; background: var(--track); }
+  .segmented button { border: 0; background: transparent; padding: 6px 18px; border-radius: 8px; color: var(--muted); font-weight: 500; }
+  .segmented button[aria-checked=true] { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+
   /* Mini-écran : choix du coin, avec le halo et la pastille à l'échelle */
   .screen { position: relative; display: grid; grid-template-columns: 1fr 1fr; width: 180px; aspect-ratio: 16 / 10; margin-top: 10px; border: 2px solid var(--border); border-radius: 8px; overflow: hidden; }
   .screen::before { content: ""; position: absolute; left: 0; right: 0; height: 3px; background: var(--amber); top: 0; }
@@ -161,7 +172,7 @@
   .row select, .row input { flex: 1 1 160px; width: auto; }
   .row button { flex: none; }
   .path { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
-  #saved, #coach-saved, #place-saved { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0; transition: opacity .4s; }
+  #saved, #coach-saved, #place-saved, #system-saved { font-weight: 400; text-transform: none; letter-spacing: 0; opacity: 0; transition: opacity .4s; }
   @media (max-width: 480px) { .score { flex-direction: column; align-items: stretch; } .ring { margin: 0 auto; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -194,28 +205,34 @@
           <div><strong id="status-title">Connexion…</strong><span id="status-detail"></span></div>
         </div>
 
-        <div class="gauges">
+        <ol id="guide" class="steps" hidden>
+          <li><strong>Placez-vous face à la webcam</strong><span id="frame-check">En attente de la webcam…</span></li>
+          <li><strong>Asseyez-vous bien droit</strong><span>Comme vous voudriez vous tenir toute la journée : dos contre le dossier, épaules relâchées.</span></li>
+          <li><strong>Cliquez sur « Calibrer ma posture »</strong><span>Restez immobile 3 secondes. Ensuite, vous pouvez fermer cette page : l'assistant veille en arrière-plan.</span></li>
+        </ol>
+
+        <div class="gauges" id="gauges">
           <div class="gauge" data-gauge="posture">
-            <div class="gauge-head"><span>Posture (tête → épaules)</span><output></output></div>
+            <div class="gauge-head"><span>Posture affaissée</span><output></output></div>
             <div class="track"><div class="fill"></div><div class="mark"></div></div>
           </div>
           <div class="gauge" data-gauge="head">
-            <div class="gauge-head"><span>Tête</span><output></output></div>
+            <div class="gauge-head"><span>Tête en avant</span><output></output></div>
             <div class="track"><div class="fill"></div><div class="mark"></div></div>
           </div>
           <div class="gauge" data-gauge="axis">
-            <div class="gauge-head"><span>Axe tête → bassin</span><output></output></div>
+            <div class="gauge-head"><span>Buste affaissé</span><output></output></div>
             <div class="track"><div class="fill"></div><div class="mark"></div></div>
           </div>
           <div class="gauge" data-gauge="lean">
-            <div class="gauge-head"><span>Inclinaison du cou</span><output></output></div>
+            <div class="gauge-head"><span>Penché sur le côté</span><output></output></div>
             <div class="track"><div class="fill"></div><div class="mark"></div></div>
           </div>
           <div class="gauge" data-gauge="close">
-            <div class="gauge-head"><span>Distance à l'écran</span><output></output></div>
+            <div class="gauge-head"><span>Trop près de l'écran</span><output></output></div>
             <div class="track"><div class="fill"></div><div class="mark"></div></div>
           </div>
-          <small>Écart à votre posture de référence. Le trait marque votre seuil de tolérance.</small>
+          <small>Écart à votre posture de référence, pour les détections actives. Le trait marque votre seuil de tolérance.</small>
         </div>
 
         <div class="actions">
@@ -223,7 +240,7 @@
           <button id="add-screen" type="button">Ajouter un écran</button>
           <button id="test" type="button">Tester le signalement</button>
         </div>
-        <small class="hint">Plusieurs écrans ? Tournez-vous vers l'autre écran, tenez-vous droit, puis « Ajouter un écran ».</small>
+        <small id="screens-hint" class="hint">Plusieurs écrans ? Tournez-vous vers l'autre écran, tenez-vous droit, puis « Ajouter un écran ».</small>
       </section>
 
       <section class="card">
@@ -308,44 +325,53 @@
           <small>Mettez en pause pendant une visio : la webcam est libérée.</small>
         </div>
         <div class="field">
-          <label>Posture affaissée (étape 1) <input type="checkbox" data-key="detect_posture"></label>
+          <label id="level-label">Exigence</label>
+          <small id="level-hint"></small>
+          <div class="segmented" role="radiogroup" aria-labelledby="level-label">
+            <button type="button" role="radio" data-level="souple">Souple</button>
+            <button type="button" role="radio" data-level="normal">Normal</button>
+            <button type="button" role="radio" data-level="exigeant">Exigeant</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Posture affaissée <input type="checkbox" data-key="detect_posture"></label>
           <div class="sub">
-            <small>Raccourcissement de la hauteur tête → épaules toléré : <output data-for="posture_threshold" data-format="pct"></output> (plus bas = plus sensible). Couvre tête en avant et épaules affaissées.</small>
+            <small>Vous vous tassez ou avancez la tête. Conseillée : couvre les deux cas les plus fréquents. Tolérance : <output data-for="posture_threshold" data-format="pct"></output> (plus bas = plus exigeant).</small>
             <input type="range" data-key="posture_threshold" min="0.01" max="0.3" step="0.005" aria-label="Tolérance posture affaissée">
           </div>
         </div>
         <div class="field">
           <label>Tête en avant <input type="checkbox" data-key="detect_head"></label>
           <div class="sub">
-            <small>Tolérance : <output data-for="head_threshold" data-format="pct"></output> (plus bas = plus sensible)</small>
+            <small>Le cou « rentre » et la tête s'avance vers l'écran. Tolérance : <output data-for="head_threshold" data-format="pct"></output> (plus bas = plus exigeant).</small>
             <input type="range" data-key="head_threshold" min="0.01" max="0.5" step="0.01" aria-label="Tolérance tête en avant">
           </div>
         </div>
         <div class="field">
-          <label>Buste affaissé (axe tête → bassin) <input type="checkbox" data-key="detect_axis"></label>
+          <label>Buste affaissé (expérimental) <input type="checkbox" data-key="detect_axis"></label>
           <div class="sub">
-            <small>Raccourcissement toléré de la ligne haut de la tête → milieu des hanches : <output data-for="axis_threshold" data-format="pct"></output>. Expérimental : repère mieux l'avachissement, mais peut signaler le travail au clavier. Recalibrez après l'avoir activée.</small>
+            <small>Repère mieux l'avachissement, mais peut se déclencher quand vous tapez au clavier. Recalibrez après l'avoir activée. Tolérance : <output data-for="axis_threshold" data-format="pct"></output> (plus bas = plus exigeant).</small>
             <input type="range" data-key="axis_threshold" min="0.01" max="0.3" step="0.005" aria-label="Tolérance buste affaissé">
           </div>
         </div>
         <div class="field">
-          <label>Penché sur le côté / accoudé (étape 2) <input type="checkbox" data-key="detect_lean"></label>
+          <label>Penché sur le côté <input type="checkbox" data-key="detect_lean"></label>
           <div class="sub">
-            <small>Inclinaison du cou tolérée : <output data-for="lean_angle" data-format="deg"></output> (plus bas = plus sensible)</small>
+            <small>Vous penchez la tête ou vous vous accoudez sur le côté. Inclinaison tolérée : <output data-for="lean_angle" data-format="deg"></output> (plus bas = plus exigeant).</small>
             <input type="range" data-key="lean_angle" min="2" max="30" step="0.5" aria-label="Tolérance inclinaison du cou">
           </div>
         </div>
         <div class="field">
           <label>Trop près de l'écran <input type="checkbox" data-key="detect_close"></label>
           <div class="sub">
-            <small>Tolérance : épaules <output data-for="close_threshold" data-format="pct"></output> plus larges qu'à la calibration</small>
+            <small>Vous vous rapprochez trop de l'écran. Tolérance : <output data-for="close_threshold" data-format="pct"></output> (plus bas = plus exigeant).</small>
             <input type="range" data-key="close_threshold" min="0.05" max="1" step="0.05" aria-label="Tolérance distance à l'écran">
           </div>
         </div>
         <div class="field">
           <label>Tête appuyée sur la main <input type="checkbox" data-key="detect_hand"></label>
           <div class="sub">
-            <small>Main à moins de <output data-for="hand_threshold" data-format="num"></output> écarts d'yeux du visage (plus haut = plus sensible)</small>
+            <small>Votre main soutient la tête, par exemple le menton dans la main. Distance main-visage : <output data-for="hand_threshold" data-format="num"></output> (plus haut = plus exigeant).</small>
             <input type="range" data-key="hand_threshold" min="0.5" max="4" step="0.1" aria-label="Distance main-visage">
           </div>
         </div>
@@ -397,10 +423,14 @@
       </section>
 
       <section class="card">
-        <h2>Système</h2>
+        <h2>Système <span id="system-saved"></span></h2>
         <div class="field">
           <label>Lancer à l'ouverture de session <input type="checkbox" data-key="autostart"></label>
           <small>Réglages et journal : <span class="path">%APPDATA%\AssistantPosture</span> (Windows) ou <span class="path">~/Library/Application Support/AssistantPosture</span> (Mac)</small>
+        </div>
+        <div class="field">
+          <button id="reset" type="button">Rétablir les réglages conseillés</button>
+          <small>Détections, tolérances et signalement reviennent aux valeurs de départ. Vos calibrations, vos lieux et votre token sont conservés.</small>
         </div>
       </section>
     </div>
@@ -419,7 +449,7 @@ const STATUS = {
   error:        ["alert", "Erreur de détection", "Redémarrage automatique… Détails dans le journal."],
   camera_error: ["alert", "Webcam indisponible", "Utilisée par une autre application, ou accès refusé dans les réglages de confidentialité ? Nouvel essai automatique…"],
   paused:       ["idle",  "En pause", "La webcam est libérée."],
-  uncalibrated: ["warn",  "Calibration nécessaire", "Asseyez-vous bien droit, face à l'écran, puis cliquez sur « Calibrer ma posture »."],
+  uncalibrated: ["warn",  "Calibration nécessaire", "Trois étapes, une minute : suivez le guide ci-dessous."],
   calibrating:  ["warn",  "Calibration…", ""],
   absent:       ["idle",  "Hors champ", "Placez votre tête et vos épaules dans l'image."],
   ok:           ["ok",    "Posture correcte", "Continuez comme ça."],
@@ -443,9 +473,25 @@ const value = key => {
   return el.type === "checkbox" ? el.checked : el.type === "range" ? +el.value : el.value;
 };
 
+// Exigence : le niveau dont toutes les tolérances valent les réglages actuels ; aucun après un curseur déplacé
+const LEVEL_HINTS = {
+  souple: "Moins d'alertes : seules les postures nettement relâchées sont signalées.",
+  normal: "Conseillé : les tolérances validées lors des essais.",
+  exigeant: "Signale les moindres écarts : plus d'alertes, parfois sans raison (en tapant au clavier, par exemple).",
+  custom: "Personnalisé : vous avez ajusté une tolérance ci-dessous. Choisissez un niveau pour revenir à un réglage prêt à l'emploi.",
+};
+let levels = {};
+function drawLevel(s) {
+  levels = s.levels;
+  const level = Object.keys(levels).find(n => Object.entries(levels[n]).every(([k, v]) => s[k] === v));
+  $$("[data-level]").forEach(b => b.setAttribute("aria-checked", b.dataset.level === level));
+  setText($("#level-hint"), LEVEL_HINTS[level || "custom"]);
+}
+
 function fill(s) {
   $$("[data-key]").forEach(el => el.type === "checkbox" ? el.checked = s[el.dataset.key] : el.value = s[el.dataset.key]);
   setCorner(s.overlay_corner);
+  drawLevel(s);
   $("#coach-token").placeholder = s.coach_token_set ? "Token enregistré" : "hf_…";
   $("#report-token-hint").hidden = s.coach_token_set;
   $("#coach-ai").hidden = !s.coach_token_set;
@@ -475,7 +521,7 @@ function drawGauges(status) {
       ["head", "detect_head"], ["lean", "detect_lean", "lean_angle", deg], ["close", "detect_close"]]) {
     const g = $(`[data-gauge=${name}]`), dev = status[`${name}_dev`], limit = value(key);
     const known = typeof dev === "number";
-    g.classList.toggle("off", !value(flag));
+    g.hidden = !value(flag);  // détection désactivée : jauge masquée
     g.classList.toggle("over", known && dev > limit);
     // le seuil est au milieu de la jauge
     g.querySelector(".fill").style.width = known ? `${Math.min(Math.max(dev / (2 * limit), 0), 1) * 100}%` : "0";
@@ -661,6 +707,16 @@ async function poll() {
     setText($("#status-title"), title);
     setText($("#status-detail"), text);
     drawGauges(status);
+    // Pas encore calibré : le guide remplace les jauges et l'ajout d'écran
+    $("#guide").hidden = !!refs.length;
+    [$("#gauges"), $("#add-screen"), $("#screens-hint")].forEach(el => el.hidden = !refs.length);
+    if (status.state === "uncalibrated") {
+      const check = !status.visible ? ["", "Tête et épaules pas encore visibles : vérifiez dans l'aperçu webcam ci-dessous."]
+        : status.low ? ["warn", "Vos épaules sont tout en bas de l'image : inclinez l'écran vers le bas ou reculez un peu."]
+        : ["ok", "✓ On vous voit bien."];
+      $("#frame-check").dataset.check = check[0];
+      setText($("#frame-check"), check[1]);
+    }
     const live = !["starting", "paused", "camera_error", "error"].includes(status.state);
     $("#video").hidden = !live;
     $("#video-off").hidden = live;
@@ -681,6 +737,7 @@ $$("[data-key]").forEach(el => el.addEventListener("input", () => {
   refresh();
   save({ [el.dataset.key]: value(el.dataset.key) });
 }));
+$$("[data-level]").forEach(b => b.addEventListener("click", () => save(levels[b.dataset.level])));
 $$("[data-corner]").forEach(b => b.addEventListener("click", () => {
   setCorner(b.dataset.corner);
   save({ overlay_corner: b.dataset.corner });
@@ -701,6 +758,11 @@ $("#place-delete").addEventListener("click", () => {
   if (confirm(`Supprimer le lieu « ${name} » et ses calibrations ?`)) placeAction({ delete: name });
 });
 $("#test").addEventListener("click", () => post("/api/test-alert"));
+$("#reset").addEventListener("click", async () => {
+  if (!confirm("Remettre les détections, les tolérances et le signalement aux réglages conseillés ? Vos calibrations et vos lieux sont conservés.")) return;
+  try { fill(await post("/api/settings", { reset: true })); flash("Réglages conseillés rétablis", $("#system-saved")); }
+  catch { flash("Échec de l'enregistrement", $("#system-saved")); }
+});
 $("#coach-save").addEventListener("click", async () => {
   try {
     fill(await post("/api/settings", { coach_token: $("#coach-token").value.trim() }));
