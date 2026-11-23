@@ -61,6 +61,19 @@ def test_settings_are_validated(base_url):
     assert state.settings["alert_delay"] == 5
 
 
+def test_reset_restores_recommended_settings_only(base_url):
+    from posture.state import DEFAULTS
+    places = {"Mon poste": [[0.5, 0.3, 0.2, 0.0, 0.6]]}
+    state.settings = {**state.settings, "places": places, "enabled": False, "coach_bill_to": "ynov"}
+    post_json(f"{base_url}/api/settings", {"alert_delay": 9, "detect_head": True, "overlay_corner": "bottom-left"})
+    assert post_json(f"{base_url}/api/settings", {"reset": "oui"})[0] == 400
+    code, body = post_json(f"{base_url}/api/settings", {"reset": True})
+    assert code == 200 and json.loads(body)["alert_delay"] == DEFAULTS["alert_delay"]
+    s = state.settings
+    assert (s["detect_head"], s["overlay_corner"]) == (DEFAULTS["detect_head"], DEFAULTS["overlay_corner"])
+    assert (s["places"], s["enabled"], s["coach_bill_to"]) == (places, False, "ynov")  # le reste ne bouge pas
+
+
 def test_second_instance_cannot_bind_same_port(base_url):
     with pytest.raises(OSError):
         server.Server(("127.0.0.1", int(base_url.rsplit(":", 1)[1])), server.Handler)

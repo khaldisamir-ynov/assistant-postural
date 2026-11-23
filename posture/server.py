@@ -7,7 +7,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from posture import autostart, coach, stats
-from posture.state import change_place, state, update_settings, validate
+from posture.state import BOOLEANS, DEFAULTS, LEVELS, RANGES, change_place, state, update_settings, validate
+
+# « Rétablir les réglages conseillés » : detections et signalement ; ni la pause, ni les calibrations, ni le token
+RECOMMENDED = [k for k in (*BOOLEANS, *RANGES, "overlay_corner") if k != "enabled"]
 
 HOST, PORT = "127.0.0.1", 8765  # local uniquement : le flux webcam ne doit jamais sortir de la machine
 URL = f"http://{HOST}:{PORT}"
@@ -27,7 +30,8 @@ class Server(ThreadingHTTPServer):
 def public_settings():
     # Le token ne repart jamais vers la page : on indique seulement s'il est enregistre
     settings = {k: v for k, v in state.settings.items() if k != "coach_token"}
-    return {**settings, "coach_token_set": bool(state.settings["coach_token"]), "autostart": autostart.is_enabled()}
+    return {**settings, "coach_token_set": bool(state.settings["coach_token"]), "autostart": autostart.is_enabled(),
+            "levels": LEVELS}  # la page envoie les tolerances du niveau choisi, validees comme un reglage ordinaire
 
 
 def _count_viewer(delta):
@@ -108,6 +112,11 @@ class Handler(BaseHTTPRequestHandler):
 
         if self.path == "/api/settings":
             try:
+                reset = data.pop("reset", False)
+                if not isinstance(reset, bool):
+                    raise ValueError("Reglage invalide : reset")
+                if reset:
+                    data = {**{k: DEFAULTS[k] for k in RECOMMENDED}, **data}
                 if "autostart" in data:
                     if not isinstance(data["autostart"], bool):
                         raise ValueError("Reglage invalide : autostart")

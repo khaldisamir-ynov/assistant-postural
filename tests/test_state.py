@@ -6,6 +6,23 @@ from posture import state as state_module
 from posture.state import DEFAULTS, change_place, load_settings, state, validate
 
 
+def test_levels_are_valid_ordered_and_on_slider_steps():
+    import re
+    from pathlib import Path
+    from posture.state import LEVELS
+    souple, normal, exigeant = LEVELS["souple"], LEVELS["normal"], LEVELS["exigeant"]
+    assert normal == {k: DEFAULTS[k] for k in normal}  # Normal = reglages conseilles
+    for level in LEVELS.values():
+        assert validate(dict(level)) == level
+    for k in normal:
+        sign = -1 if k == "hand_threshold" else 1  # main : plus haut = plus exigeant
+        assert sign * souple[k] > sign * normal[k] > sign * exigeant[k], k
+    page = Path(state_module.__file__).with_name("index.html").read_text(encoding="utf-8")
+    for k in normal:  # sinon le curseur s'arrondit et n'affiche pas la valeur du niveau
+        low, step = map(float, re.search(rf'data-key="{k}" min="([\d.]+)" max="[\d.]+" step="([\d.]+)"', page).groups())
+        assert all(abs((lv[k] - low) / step - round((lv[k] - low) / step)) < 1e-9 for lv in LEVELS.values()), k
+
+
 def test_validate_accepts_good_values():
     good = {"alert_delay": 5, "enabled": False, "overlay_corner": "top-left", "head_threshold": 0.2, "show_pill": True}
     assert validate(good) == good

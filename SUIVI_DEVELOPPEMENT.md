@@ -290,6 +290,15 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
 - Le rapport rédigé par le LLM garde 3 conseils (consigne inchangée).
 - Carte « Aujourd'hui » enrichie : temps en mauvaise posture ; pour chaque mauvaise posture, part du temps suivi, ce que mesure la détection et durée habituelle (moyenne des jours précédents, `stats.last_days` renvoie maintenant les minutes par posture) ; détections désactivées rappelées ; meilleur et plus difficile moment (même règle que le rapport : demi-heures suivies au moins 5 min). Vérifié dans le navigateur avec des statistiques factices.
 
+### 2026-11-23 : prise en main simplifiée
+- Premier lancement : tant que le lieu n'est pas calibré, un guide en 3 étapes remplace les jauges, l'ajout d'écran et son conseil. L'étape 1 dit en direct si la tête et les épaules sont visibles, ou si les épaules sont trop bas dans l'image (`EDGE_Y`) : l'état `uncalibrated` porte maintenant `visible` et `low`.
+- Jauges : seules les détections actives sont affichées, avec les mêmes noms que les motifs (« Posture affaissée », « Penché sur le côté »…).
+- Réglages : une phrase simple par détection, sans « étape 1 / 2 » ni description géométrique ; « plus bas = plus exigeant » partout.
+- « Rétablir les réglages conseillés » (`POST /api/settings {"reset": true}`) : détections, tolérances et signalement aux valeurs par défaut ; pause, calibrations, lieux, token et lancement automatique conservés.
+- Menu de l'icône : « Ouvrir les réglages » devient « Ouvrir l'assistant » (il ouvre la page d'accueil).
+- 2 tests (`test_detector.py`, `test_server.py`) ; vérifié dans le navigateur, du premier lancement à l'état calibré.
+- Exigence **Souple / Normal / Exigeant** (Réglages → Détection) : règle les 6 tolérances d'un clic (`state.LEVELS`). Normal = valeurs par défaut ; Souple et Exigeant choisis dans les marges des essais du 2026-10-30 (cou 4° / 9° pour 2,3 à 12,3° mesurés, épaules 15 % / 40 % pour +10 à +73 %, main 2,3 / 1,6 pour 1,4 à 2,4). Un curseur déplacé affiche « Personnalisé ». Aucun nouveau réglage enregistré : la page envoie les tolérances du niveau, validées comme les autres. **Non mesuré** : la tolérance posture à 4 % (Souple) ne voit plus l'avachi que sur 61 % des images au banc ; à 2 % (Exigeant), fausses alertes au clavier probables. Test : niveaux valides, ordonnés et sur le pas des curseurs.
+
 ## Prochaines étapes
 
 - [ ] Tester l'app macOS sur un vrai Mac : lancement, autorisation caméra, icône de barre des menus, halo et pastille.
