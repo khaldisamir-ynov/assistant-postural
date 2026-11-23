@@ -155,7 +155,9 @@ def update_status(metrics, s, bad_since, now, hand_dist=None):
     if s["detect_posture"]:
         refs = [r for r in refs if len(r) > 4]  # calibration d'avant l'etape 1 : sans hauteur tete-epaules
     if not refs:
-        state.status = {"state": "uncalibrated"}
+        # visible / low : guident le premier placement dans la page, avant la calibration
+        state.status = {"state": "uncalibrated", "visible": metrics is not None,
+                        "low": metrics is not None and metrics[0] > EDGE_Y}
         return None
     if metrics is None:
         state.status = {"state": "absent"}  # hors champ : pas d'alerte
