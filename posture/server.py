@@ -132,11 +132,16 @@ class Handler(BaseHTTPRequestHandler):
             state.test_alert_until = time.time() + TEST_ALERT_SECONDS
             self.send_json({})
         elif self.path == "/api/coach":
-            today, token = state.stats, state.settings["coach_token"]
-            if not token:
+            # Rapport calcule sur le poste par defaut ; « hf » : redige par le LLM, a la demande de l'utilisateur
+            source, today, token = data.get("source", "local"), state.stats, state.settings["coach_token"]
+            if source not in ("local", "hf"):
+                return self.send_error(400)
+            if source == "hf" and not token:
                 return self.send_json({"error": "Enregistrez d'abord votre token Hugging Face."}, 400)
             if not today or not today["good"] + today["bad"]:
                 return self.send_json({"error": "Pas encore de statistiques aujourd'hui."}, 400)
+            if source == "local":
+                return self.send_json({"advice": coach.local_report(today, stats.last_days(today))})
             try:
                 self.send_json({"advice": coach.ask(today, token, state.settings["coach_bill_to"],
                                                     stats.last_days(today))})

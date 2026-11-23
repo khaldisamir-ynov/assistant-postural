@@ -37,7 +37,7 @@ Historique et choix techniques : [SUIVI_DEVELOPPEMENT.md](SUIVI_DEVELOPPEMENT.md
 | **F7** | **Plusieurs écrans** : jusqu'à 4 références par lieu (« Ajouter un écran »). La posture est jugée par rapport à la référence la plus proche. |
 | F8 | Hors champ (tête ou épaules invisibles) : aucune alerte. Webcam prise par une autre application : nouvel essai toutes les 2 s. **Pause** : la webcam est libérée. |
 | F9 | **Statistiques du jour** : temps en bonne posture, temps suivi, nombre d'alertes, motif principal. Remises à zéro chaque jour. |
-| F10 | **Coach IA** (facultatif) : un LLM Hugging Face rédige un rapport de journée (bilan, postures à surveiller, moments de la journée, 3 conseils) à partir des statistiques du jour et des 7 derniers jours, avec le token de l'utilisateur. |
+| F10 | **Rapport de la journée** (bilan, postures à surveiller, moments de la journée, 3 à 5 conseils), à partir des statistiques du jour et des 7 derniers jours. Par défaut, il est **calculé sur l'ordinateur** (règles et table de conseils), sans réseau ni token (critères C16, § 4.11). En option, un LLM Hugging Face le rédige, avec le token de l'utilisateur et à sa demande. |
 | F11 | Interface de configuration locale (http://127.0.0.1:8765) : état, jauges en direct, réglages, test du signalement, aperçu webcam repliable. |
 | F12 | Fonctionnement en arrière-plan : icône de notification (Windows) ou de barre des menus (Mac), lancement à l'ouverture de session, une seule instance. |
 | **F13** *(prévue)* | **Webcam déplacée sans recalibrage** : quand l'ordinateur est incliné, tourné ou déplacé, l'assistant mesure le décalage du décor et l'applique à la posture de référence. **Aucune action de l'utilisateur.** Si la compensation est impossible (décor méconnaissable, trop peu de repères), les alertes sont suspendues plutôt que fausses. |
@@ -48,7 +48,7 @@ Historique et choix techniques : [SUIVI_DEVELOPPEMENT.md](SUIVI_DEVELOPPEMENT.md
 
 | ID | Exigence |
 |----|----------|
-| **N1 Vie privée** | Aucune image n'est enregistrée ni envoyée. Seul le coach (s'il est activé) envoie des **chiffres agrégés** à Hugging Face. L'empreinte du décor (F13, F14) n'est pas une image : des coordonnées de points et des codes binaires, qui restent sur l'ordinateur. |
+| **N1 Vie privée** | Aucune image n'est enregistrée ni envoyée. Seul le rapport rédigé par l'IA, **à la demande** de l'utilisateur, envoie des **chiffres agrégés** à Hugging Face. Le rapport par défaut ne sort pas du poste. L'empreinte du décor (F13, F14) n'est pas une image : des coordonnées de points et des codes binaires, qui restent sur l'ordinateur. |
 | N2 Sécurité | Serveur sur `127.0.0.1` uniquement ; en-tête `Host` contrôlé (anti DNS rebinding) ; `POST` JSON obligatoire ; chaque réglage validé et borné ; le token n'est jamais renvoyé à la page ; la réponse du LLM est affichée comme du texte, jamais comme du HTML. |
 | N3 Performance | 10 images/s analysées ; au plus 5 % du processeur de la machine en moyenne et 500 Mo de mémoire. |
 | N4 Robustesse | La détection redémarre seule après une erreur. Un fichier de réglages ou de statistiques abîmé n'empêche pas le démarrage et ne fait pas perdre les calibrations valides. |
@@ -258,6 +258,21 @@ Constat (§ 6.6) : quand on s'avachit, les épaules descendent dans l'image, mai
 
 Si C15 est atteint, la règle entre comme option désactivée par défaut, puis elle est confirmée sur un **nouvel** enregistrement de bureau en continu (`rejouer.py`). Sinon, la piste est écartée, et le résultat est noté au § 6.3.
 
+### 4.11 Rapport calculé sur le poste (C16), ajoutés le 2026-11-20 avant le code
+
+Constat : le coach ne reçoit que des chiffres. Les comptes Hugging Face gratuits n'ont plus de crédits mensuels : le rapport par LLM n'est donc plus gratuit, et il fait sortir des chiffres du poste. Le rapport par défaut est calculé par des règles, à partir des **mêmes chiffres** que ceux envoyés au LLM (`coach.summary`).
+
+| ID | Critère |
+|----|---------|
+| C16a | Les 4 parties du rapport par LLM, dans cet ordre : Bilan, Postures à surveiller, Moments de la journée, Conseils. Même format (titres « ## », puces « - ») : la page les met en forme sans changement |
+| C16b | Chaque nombre du rapport vient des statistiques. **Bilan** : temps suivi, % en bonne posture, nombre d'alertes. S'il y a des jours précédents, il ajoute leur moyenne de bonne posture : « mieux » ou « moins bien » à partir de 3 points d'écart, « comparable » en dessous. *Ajout du 2026-11-20, après le premier lancement (22 s suivies, « mieux que les jours précédents ») : pas de comparaison sous 5 min suivies, le seuil déjà appliqué aux demi-heures* |
+| C16c | **Postures à surveiller** : chaque mauvaise posture d'au moins 1 min (comme la page), de la plus longue à la plus courte, avec sa durée et sa part du temps suivi. Sinon, une phrase le dit |
+| C16d | **Moments** : seulement les demi-heures suivies au moins 5 min (comme pour le LLM). La meilleure et la plus difficile, à égalité la plus tôt. Avec une seule demi-heure, elle seule. Sans aucune, une phrase le dit |
+| C16e | **Conseils** : de 3 à 5, sans doublon, pris dans une table fixe relue par l'utilisateur, où seules les heures, durées et nombres viennent du jour. *Modifié le 2026-11-23 (au lieu de « exactement 3 ») :* choisis d'après les chiffres, par ordre de priorité : la mauvaise posture principale ; au moins 2 h d'affilée presque sans pause (chaque demi-heure suivie au moins 28 min), avec les heures ; une pause avant la demi-heure la plus difficile ; les 2e et 3e mauvaises postures ; au moins 6 alertes par heure (sur au moins 30 min suivies) ; une journée moins bonne que les précédentes (recalibrer) ; le 2e conseil de la posture principale. Très bonne journée (au moins 90 %, aucune mauvaise posture d'une minute, au moins 5 min suivies) : conseil de continuer, en tête. Moins de 3 conseils : complétés par les conseils généraux |
+| C16f | Même statistiques, même texte. Aucun appel réseau, aucun token |
+
+Vérification : tests automatiques (`tests/test_coach.py`), puis l'essai manuel « Rapport » du § 5.3.
+
 ---
 
 ## 5. Comment faire les essais
@@ -299,7 +314,7 @@ Les deux scripts sont des outils de mesure, pas des tests unitaires. Les tests a
 | Écrans multiples (C6) | Calibrer face à l'écran 1 ; se tourner vers l'écran 2, « Ajouter un écran » ; alterner 1 min | Pas d'alerte ; la page indique « écran 1 / écran 2 » |
 | Lieux | Créer « Maison », calibrer, revenir à « Bureau » par le menu de l'icône | Chaque lieu garde ses calibrations |
 | Hors champ / pause / webcam occupée (C5) | Sortir du champ ; Pause ; ouvrir l'application Caméra | Gris, sans alerte ; reprise seule à la fermeture de l'application Caméra |
-| Coach | Après quelques minutes suivies : onglet **Rapport IA** → « Générer mon rapport » | Rapport en 4 parties, ou un message clair si le token est absent ou invalide |
+| Rapport | Après quelques minutes suivies : onglet **Rapport** → « Générer mon rapport », sans token ; puis « Rédiger avec l'IA » avec un token | Rapport en 4 parties dans les deux cas ; pour l'IA, un message clair si le token est absent, invalide ou sans crédits |
 | Performance (C3) | Assistant actif 30 s, mesurer le temps processeur du processus | ≤ 5 % de la machine, ≤ 500 Mo |
 
 ### 5.4 Essai « webcam déplacée » (C8)
@@ -540,7 +555,7 @@ Toutes les réponses ont été demandées 2 fois (température 0). Détail : `es
 - **Coût et confidentialité** : à une analyse toutes les 5 s, les modèles du routeur coûtent de 0,02 à 0,24 $ par heure, soit 0,2 à 2 $ par journée de travail et par personne. Ils font sortir une photo (B, C, E) ou des repères (D) toutes les 5 s, ce que C7 interdit par défaut. Leur latence (p95 jusqu'à 5,5 s) dépend du réseau et du fournisseur. MediaPipe tourne en local, hors ligne, en 0,06 s, gratuitement.
 - **MediaPipe photo par photo (32 % de fausses alertes) n'est pas l'application.** L'application lisse sur 1 s, attend 2 s avant d'alerter et se calibre sur 3 s, pas sur une seule photo. Au banc en continu, l'enregistrement C ne donne aucune alerte en bonne posture (§ ci-dessous). La comparaison reste équitable, puisque toutes les approches voient les mêmes photos, avec la même référence.
 
-**Décision : MediaPipe est gardé seul pour la détection.** Les VLM et LLM sont écartés pour la posture (§ 6.3). Le LLM reste utile pour ce qu'il fait déjà : le bilan du coach, à partir de 8 chiffres.
+**Décision : MediaPipe est gardé seul pour la détection.** Les VLM et LLM sont écartés pour la posture (§ 6.3). Le LLM reste utile pour ce qu'il fait déjà : rédiger le bilan du coach à partir de chiffres, en option depuis le 2026-11-20 (§ 4.11).
 
 **Limites** : une seule personne, deux séances, 6 photos par posture. Les intervalles de confiance sont larges (± 15 points) : une différence de quelques photos ne veut rien dire.
 
@@ -567,7 +582,7 @@ Point faible confirmé : **l'avachi**. Sur 3 des 4 séances, la hauteur tête-é
 - assistant lancé ;
 - page http://127.0.0.1:8765 ouverte, avec l'aperçu webcam déplié ;
 - cadrage vérifié (épaules au-dessus des trois quarts de l'image) ;
-- token du coach enregistré ;
+- token Hugging Face enregistré (pour la version rédigée par l'IA) ;
 - quelques minutes de suivi déjà accumulées, pour que les statistiques et le coach aient de la matière.
 
 | # | Action | Ce qu'on montre | Message |
@@ -579,12 +594,12 @@ Point faible confirmé : **l'avachi**. Sur 3 des 4 séances, la hauteur tête-é
 | 5 | Se pencher sur le côté, puis menton dans la main, puis se rapprocher de l'écran | Les motifs « Penché », « Tête appuyée sur la main », « Trop près » | Les 5 détections |
 | 6 | Se tourner vers le 2e écran (déjà ajouté) | Pas d'alerte, « écran 2 » | Écrans multiples |
 | 7 | Menu de l'icône → **Lieu de travail** → Maison | Changement de lieu en un clic | Pas de recalibration à chaque changement d'endroit |
-| 8 | Onglet **Rapport IA** → **Générer mon rapport** | Rapport de journée de Qwen (Hugging Face) : bilan, postures, moments, conseils | Seuls 8 chiffres sont envoyés au LLM |
+| 8 | Onglet **Rapport** → **Générer mon rapport**, puis **Rédiger avec l'IA** | Le même rapport en 4 parties : calculé sur le poste, puis rédigé par Qwen (Hugging Face) | Par défaut rien ne sort ; l'IA ne reçoit que des chiffres, à la demande |
 | 9 | Montrer le tableau du § 6 | 11 critères sur 16, les échecs expliqués | La démarche : mesurer, décider, puis vérifier |
 
 **En cas de problème pendant la démo** :
 - le signalement ne se déclenche pas → bouton « Tester le signalement » ;
-- le coach est indisponible (réseau) → montrer le message d'erreur clair, puis la sortie de `mon_script.py` enregistrée à l'avance ;
+- l'IA est indisponible (réseau, crédits) → montrer le message d'erreur clair, puis le rapport calculé sur le poste, qui ne dépend pas du réseau ;
 - la webcam est occupée → fermer Teams ou Zoom : l'assistant reprend seul.
 
 ---

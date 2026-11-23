@@ -73,9 +73,19 @@ def test_token_is_validated_and_never_sent_back(base_url):
     assert "hf_" not in call(f"{base_url}/api/state")[1].decode()
 
 
-def test_coach_needs_token(base_url):
-    code, body = post_json(f"{base_url}/api/coach", {})
+def test_ai_report_needs_token(base_url):
+    code, body = post_json(f"{base_url}/api/coach", {"source": "hf"})
     assert code == 400 and "token" in json.loads(body)["error"]
+    assert post_json(f"{base_url}/api/coach", {"source": "ailleurs"})[0] == 400
+
+
+def test_local_report_needs_no_token(base_url):
+    from posture.stats import empty
+    code, body = post_json(f"{base_url}/api/coach", {})
+    assert code == 400 and "statistiques" in json.loads(body)["error"]
+    state.stats = {**empty("2026-11-20"), "good": 600.0, "bad": 120.0, "head": 120.0}
+    code, body = post_json(f"{base_url}/api/coach", {})
+    assert code == 200 and json.loads(body)["advice"].startswith("## Bilan\nTemps suivi aujourd'hui : 12 min")
 
 
 def test_places_api(base_url):
