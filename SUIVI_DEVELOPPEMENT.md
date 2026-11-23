@@ -275,6 +275,21 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
 - **L'hypothèse ne tient pas** : en s'avachissant, la tête bascule autant ou plus qu'au clavier, dans les 4 séances. Dans A, les épaules ne descendent que de 1,9 %. Aucun couple (*s*, *b*) ne passe dans les 4 séances (C15a) ; un couple choisi sur 3 séances échoue sur la 4e, dans les 4 cas (C15b).
 - Décision : piste écartée. Dans B, droit2 a déjà une bascule de +0,48 par rapport à la calibration : la tête dérive en position droite, ce qui rendrait la mesure fragile même si l'hypothèse tenait.
 
+### 2026-11-20 : rapport de la journée calculé sur le poste (C16)
+- Constat : les comptes Hugging Face gratuits n'ont plus de crédits mensuels (documentation d'Inference Providers). Le rapport par LLM n'était donc plus gratuit pour un nouvel utilisateur, et il faisait sortir des chiffres du poste.
+- Le coach ne reçoit que des chiffres : `coach.local_report` écrit le même rapport en 4 parties avec des règles, à partir des chiffres de `coach.summary`, ceux qu'on envoie au LLM. Les conseils viennent d'une table fixe (`coach.ADVICE`, `coach.GENERAL`), choisis selon les postures principales, plus un conseil de pause avant la demi-heure la plus difficile.
+- Critères C16 écrits avant le code (SPECIFICATIONS.md § 4.11) ; 7 tests (`tests/test_coach.py`, `tests/test_server.py`), 73 tests au total.
+- Interface : onglet **Rapport** ; « Générer mon rapport » sans token ; « Rédiger avec l'IA » n'apparaît qu'avec un token Hugging Face. L'API garde la même route (`POST /api/coach`, `{"source": "hf"}` pour le LLM).
+- Premier lancement sur données réelles : 22 s suivies donnaient « mieux que votre jour précédent ». Pas de comparaison sous 5 min suivies (ajout daté à C16b), et formulation corrigée pour un seul jour précédent.
+- Corrigé au passage : `test_non_json_post_is_rejected` échouait environ 1 fois sur 8. Le serveur refusait la requête avant d'en lire le corps, et Windows coupait la connexion (WinError 10053) avant que le 403 arrive. Le corps est maintenant lu en premier, plafonné à 64 Ko ; une longueur négative reçoit 413 au lieu de bloquer la lecture. 0 échec sur 30 passes.
+- **À faire** : relire et sourcer la table de conseils (rédigée sans source).
+
+### 2026-11-23 : plus de conseils, choisis d'après les chiffres (C16e modifié)
+- De 3 conseils à 3 à 5, par ordre de priorité. Nouvelles règles : travail d'au moins 2 h d'affilée presque sans pause (`coach.STREAK`, avec les heures), au moins 6 alertes par heure (`coach.ALERTS`), journée moins bonne que les précédentes (le conseil de recalibrer remonte), très bonne journée (`coach.GOOD_DAY`). Les 2e et 3e mauvaises postures ont aussi leur conseil.
+- Seuils choisis sans mesure (28 min suivies par demi-heure, 2 h, 6 alertes par heure, 90 %) : à revoir sur des journées réelles.
+- Le rapport rédigé par le LLM garde 3 conseils (consigne inchangée).
+- Carte « Aujourd'hui » enrichie : temps en mauvaise posture ; pour chaque mauvaise posture, part du temps suivi, ce que mesure la détection et durée habituelle (moyenne des jours précédents, `stats.last_days` renvoie maintenant les minutes par posture) ; détections désactivées rappelées ; meilleur et plus difficile moment (même règle que le rapport : demi-heures suivies au moins 5 min). Vérifié dans le navigateur avec des statistiques factices.
+
 ## Prochaines étapes
 
 - [ ] Tester l'app macOS sur un vrai Mac : lancement, autorisation caméra, icône de barre des menus, halo et pastille.
