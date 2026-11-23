@@ -14,6 +14,7 @@ URL = f"http://{HOST}:{PORT}"
 INDEX_FILE = Path(__file__).with_name("index.html")
 TEST_ALERT_SECONDS = 6
 STREAM_PERIOD = 0.1
+MAX_BODY = 64 * 1024  # les requetes de la page font moins d'1 Ko
 
 _viewers_lock = threading.Lock()
 
@@ -87,11 +88,19 @@ class Handler(BaseHTTPRequestHandler):
             _count_viewer(-1)
 
     def do_POST(self):
+        # Corps lu avant tout refus : sous Windows, fermer avec un corps non lu coupe la connexion et le 403 se perd
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+        except ValueError:
+            return self.send_error(400)
+        if not 0 <= length <= MAX_BODY:  # negatif : la lecture attendrait la fin de la connexion
+            return self.send_error(413)
+        body = self.rfile.read(length)
         # JSON obligatoire : impose un preflight CORS, donc un site externe ne peut pas piloter l'appli
         if not self.host_ok() or self.headers.get("Content-Type") != "application/json":
             return self.send_error(403)
         try:
-            data = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+            data = json.loads(body or b"{}")
             if not isinstance(data, dict):
                 raise ValueError
         except ValueError:

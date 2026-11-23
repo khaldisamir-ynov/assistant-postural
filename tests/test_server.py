@@ -1,4 +1,5 @@
 import json
+import socket
 import threading
 import urllib.error
 import urllib.request
@@ -43,6 +44,13 @@ def test_foreign_host_is_rejected(base_url):
 
 def test_non_json_post_is_rejected(base_url):
     assert call(f"{base_url}/api/settings", b"enabled=false")[0] == 403
+    # Longueur negative : refusee sans lire le corps (sinon la lecture attendrait la fin de la connexion). Aucun corps
+    # envoye ici : un corps non lu ferait couper la connexion par Windows avant la reponse
+    host, port = base_url.rsplit("/", 1)[1].split(":")
+    with socket.create_connection((host, int(port)), timeout=5) as s:
+        s.sendall(f"POST /api/settings HTTP/1.1\r\nHost: {host}:{port}\r\nContent-Type: application/json\r\n"
+                  "Content-Length: -1\r\n\r\n".encode())
+        assert s.recv(64).startswith(b"HTTP/1.0 413")
 
 
 def test_settings_are_validated(base_url):
