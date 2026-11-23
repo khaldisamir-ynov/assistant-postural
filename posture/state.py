@@ -61,6 +61,17 @@ DEFAULTS = {
     "coach_bill_to": "",
 }
 
+# Exigence (Reglages) : Normal = valeurs par defaut. Souple et Exigeant restent dans les marges mesurees (core.py,
+# essais du 2026-10-30 : cou 2,3 a 12,3 degres, epaules +10 a +73 %, main 1,4 a 2,4 ecarts d'yeux ; a 4 %, l'avachi
+# n'est plus vu que sur 61 % des images). Valeurs sur le pas des curseurs de la page.
+TOLERANCES = ("posture_threshold", "head_threshold", "lean_angle", "close_threshold", "hand_threshold",
+              "axis_threshold")
+LEVELS = {
+    "souple": dict(zip(TOLERANCES, (0.04, 0.08, 9.0, 0.4, 1.6, 0.04))),
+    "normal": {k: DEFAULTS[k] for k in TOLERANCES},
+    "exigeant": dict(zip(TOLERANCES, (0.02, 0.03, 4.0, 0.15, 2.3, 0.02))),  # main : plus haut = plus exigeant
+}
+
 # Chaque champ est remplace d'un bloc (jamais modifie en place) : lecture sans verrou depuis les autres fils.
 state = SimpleNamespace(settings=dict(DEFAULTS), status={"state": "starting"}, jpeg=None, viewers=0,
                         calib_start=None, calib_samples=[], calib_add=False, calib_message=None,
