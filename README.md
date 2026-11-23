@@ -83,8 +83,9 @@ Ouvrez les réglages depuis **l'icône de l'assistant** (ou à l'adresse http://
 - **Position** : le coin de l'écran où apparaît la pastille (le liseré suit le bord haut ou bas).
 - **Tester le signalement** : pour voir à quoi ressemble l'alerte, sans avoir à se tenir mal.
 - **Lancer à l'ouverture de session** : l'assistant démarre tout seul quand vous allumez votre ordinateur.
-- **Aujourd'hui** : pourcentage du temps en bonne posture, temps suivi, nombre d'alertes et motif le plus fréquent. Remis à zéro chaque jour.
-- **Coach IA (facultatif)** : collez votre token [Hugging Face](https://huggingface.co/settings/tokens) (type *Read*), puis cliquez sur **Demander un bilan au coach** : un LLM (Qwen) propose 3 conseils adaptés à votre journée. Champ *Organisation à facturer* : si une organisation (votre école, par exemple) paie vos appels.
+- **Aujourd'hui** : pourcentage du temps en bonne posture, temps suivi, temps en mauvaise posture, nombre d'alertes. Pour chaque mauvaise posture : sa durée, sa part du temps suivi, ce que la détection mesure et sa durée habituelle les jours précédents ; les détections désactivées sont rappelées. Sous le déroulé par demi-heure : le meilleur et le plus difficile moment. Remis à zéro chaque jour.
+- **Rapport de la journée** : onglet **Rapport** → **Générer mon rapport**. Il fait le bilan (temps suivi, % en bonne posture, comparaison avec les jours précédents), liste les postures à surveiller et les meilleurs et pires moments, puis donne 3 à 5 conseils choisis d'après vos chiffres (postures, longues périodes sans pause, heure la plus difficile, nombre d'alertes). Il est calculé sur votre ordinateur, sans compte ni Internet.
+- **Rapport rédigé par une IA (facultatif)** : collez votre token [Hugging Face](https://huggingface.co/settings/tokens) (type *Read*) dans les réglages, puis cliquez sur **Rédiger avec l'IA** : un LLM (Qwen) rédige le même rapport. Les comptes Hugging Face gratuits doivent acheter des crédits. Champ *Organisation à facturer* : si une organisation (votre école, par exemple) paie vos appels.
 
 Changé de chaise, d'écran ou de place ? Cliquez sur **Recalibrer**.
 
@@ -111,7 +112,7 @@ Bureau, maison, café… Chaque lieu garde ses propres calibrations (une par éc
 - **Tout reste sur votre ordinateur.** Aucune image n'est enregistrée ni envoyée sur Internet.
 - L'application analyse la position de vos oreilles et de vos épaules, image par image, puis oublie l'image.
 - Les réglages de l'interface ne sont accessibles que depuis votre propre ordinateur.
-- **Coach IA** : seulement si vous l'utilisez, les chiffres du jour (minutes, pourcentage, nombre d'alertes) sont envoyés à Hugging Face. Jamais d'image. Votre token reste sur votre ordinateur, dans le fichier de réglages.
+- **Rapport** : calculé sur votre ordinateur, rien n'est envoyé. Seulement si vous cliquez sur **Rédiger avec l'IA**, les chiffres du jour (minutes, pourcentage, nombre d'alertes) sont envoyés à Hugging Face. Jamais d'image. Votre token reste sur votre ordinateur, dans le fichier de réglages.
 - Seuls vos réglages, votre calibration et les compteurs du jour (quelques nombres) sont conservés, dans `%APPDATA%\AssistantPosture\` (Windows) ou `~/Library/Application Support/AssistantPosture/` (Mac).
 
 ---
@@ -171,7 +172,7 @@ Sur Mac : mêmes commandes avec `.venv/bin/` au lieu de `.\.venv\Scripts\`. L'ap
 | `posture/overlay.py` | Liseré et pastille (tkinter + Win32 ou AppKit) |
 | `posture/tray.py` | Icône de la zone de notification ou de la barre des menus (pystray) |
 | `posture/stats.py` | Compteurs du jour (temps en bonne posture, alertes) |
-| `posture/coach.py` | Conseils d'un LLM Hugging Face à partir des compteurs |
+| `posture/coach.py` | Rapport de la journée à partir des compteurs : calculé sur le poste, ou rédigé par un LLM Hugging Face |
 | `posture/autostart.py` | Lancement à l'ouverture de session (registre Windows ou LaunchAgent macOS) |
 | `posture/index.html` | Interface de configuration |
 
