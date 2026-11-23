@@ -17,7 +17,7 @@ Une seule idée tient jusqu'au bout : MediaPipe Pose, en local, repères des ore
 | 5. Images puis vidéos générées | Qwen-Image, FLUX, Wan, LTX : même personne, postures modifiées | Écarté pour les postures fines. Le modèle déplace le corps plus que la posture. Utile seulement pour des objets bien visibles, et encore : le jeu généré surestimait les VLM. |
 | 6. VLM et LLM sur l'image | Silhouette, photo, repères | Écarté pour détecter. Trop de fausses alertes, ou l'objet (téléphone) est caché par la main. Envoyer l'image est refusé. |
 | 7. Buste | Épaules qui descendent, flux optique sur le t-shirt, axe tête–hanches | Épaules retiré (échoue au bureau). Flux optique écarté (les plis bougent). Axe tête–hanches laissé en option, désactivé : les hanches sont hors champ, MediaPipe les invente. |
-| 8. État actuel | MediaPipe seul pour alerter. Qwen, via Hugging Face, rédige le bilan du jour à partir des compteurs | Détection 100 % locale. Le coach est facultatif et ne reçoit aucune image. |
+| 8. État actuel | MediaPipe seul pour alerter. Le rapport du jour est calculé sur le poste ; Qwen, via Hugging Face, peut le rédiger à la demande | Détection et rapport 100 % locaux par défaut. L'IA est facultative et ne reçoit aucune image. |
 
 Le point faible assumé : l'avachi au bureau. Selon la séance, il est vu ou non. L'ordinateur sur les genoux est hors périmètre, parce que la webcam suit le buste.
 
@@ -47,7 +47,7 @@ MediaPipe est épinglé à `0.10.21` (`requirements.lock`, `pyproject.toml`) : l
 
 **La détection rejoue le même verdict.** `essais/rejouer.py` ne tire pas au sort : deux passages sur le même `landmarks.jsonl` doivent afficher les mêmes pourcentages. C'est le critère de reproductibilité du modèle.
 
-**Ce qu'un clone ne peut pas refaire.** `essais/donnees/` est dans `.gitignore`. Les pourcentages du suivi (avachi à 71 %, tête en avant à 90 %, etc.) ne se recalculent pas sans ces fichiers. Les images et vidéos générées non plus : elles dépendent d'un token Hugging Face, d'un modèle qui change, et elles ne sont pas rejouées à l'identique. Le coach non plus : la réponse du LLM varie, et elle n'entre pas dans la détection. L'application Mac est construite en CI, mais personne ne l'a encore lancée sur un Mac.
+**Ce qu'un clone ne peut pas refaire.** `essais/donnees/` est dans `.gitignore`. Les pourcentages du suivi (avachi à 71 %, tête en avant à 90 %, etc.) ne se recalculent pas sans ces fichiers. Les images et vidéos générées non plus : elles dépendent d'un token Hugging Face, d'un modèle qui change, et elles ne sont pas rejouées à l'identique. La version IA du rapport non plus : la réponse du LLM varie, et elle n'entre pas dans la détection. Le rapport calculé sur le poste, lui, est déterministe et testé. L'application Mac est construite en CI, mais personne ne l'a encore lancée sur un Mac.
 
 À dire en soutenance : le comportement du logiciel et le banc sont reproductibles ; les essais humains ne le sont que si l'on fournit les `landmarks.jsonl`. Les pistes génératives et le coach ne le sont pas, et elles ne portent pas la détection.
 
@@ -60,7 +60,7 @@ Rien à côté de l'ordinateur. Pas de GPU, pas de caméra externe, pas de serve
 | Machine | Windows 10 ou 11, ou Mac à puce Apple (M1 et suivants, macOS 11 ou plus). Pas d'application prête pour un Mac Intel. |
 | Webcam | Celle du portable, face à la personne. Tête et épaules dans le champ. |
 | Calcul | MediaPipe sur le processeur, 10 images/s. Le budget fixé (C3) : au plus 5 % du processeur et 500 Mo. Mesure : 1,3 % de la machine (28 % d'un cœur sur 22), 307 Mo. |
-| Réseau | Aucun pour détecter. Seulement si l'utilisateur demande le bilan du coach : des chiffres partent vers Hugging Face, jamais une image. |
+| Réseau | Aucun pour détecter ni pour le rapport du jour. Seulement si l'utilisateur demande la version rédigée par l'IA : des chiffres partent vers Hugging Face, jamais une image. |
 | Installation | Un exe Windows ou un zip Mac, sans droits administrateur. Les réglages restent dans le dossier de l'utilisateur. |
 
 L'aperçu webcam se replie : replié, aucune image n'est encodée. C'est ce qui garde le coût bas sur une journée. La compensation quand on déplace l'écran (F13) n'est pas dans le produit : l'essai n'a pas atteint ses critères.
