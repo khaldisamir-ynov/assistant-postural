@@ -107,5 +107,5 @@ def last_days(today_stats, n=7):
         tracked = st["good"] + st["bad"]
         if tracked:
             out.append({"date": day, "minutes": round(tracked / 60), "good_pct": round(100 * st["good"] / tracked),
-                        "alerts": st["alerts"]})
+                        "alerts": st["alerts"], "reasons": {k: round(st[k] / 60) for k in REASONS}})
     return out

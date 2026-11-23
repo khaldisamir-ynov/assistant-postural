@@ -57,9 +57,11 @@ def test_history_keeps_past_days_and_drops_bad_entries():
     data["2026-09-10"]["good"] = -5  # entree abimee : ignoree, les autres restent
     stats_module.HISTORY_FILE.write_text(json.dumps(data), encoding="utf-8")
     assert "2026-09-10" not in history() and "2026-09-11" in history()
-    today = {**empty("2026-10-05"), "good": 90.0, "bad": 30.0, "alerts": 1}
+    today = {**empty("2026-10-05"), "good": 90.0, "bad": 150.0, "head": 150.0, "alerts": 1}
     week = last_days(today)
-    assert len(week) == 7 and week[-1] == {"date": "2026-10-05", "minutes": 2, "good_pct": 75, "alerts": 1}
+    assert len(week) == 7 and week[-1] == {
+        "date": "2026-10-05", "minutes": 4, "good_pct": 38, "alerts": 1,
+        "reasons": {"posture": 0, "head": 2, "lean": 0, "close": 0, "hand": 0, "axis": 0}}  # moyennes de la page
 
 
 def test_old_stats_file_without_slots_is_kept():
