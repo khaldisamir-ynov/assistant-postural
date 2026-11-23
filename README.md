@@ -43,8 +43,10 @@ Le premier démarrage prend quelques secondes. Une page s'ouvre dans votre navig
 
 ### 2. Calibrer votre bonne posture
 
+La page vous guide en 3 étapes et vous dit en direct si la webcam vous voit bien.
+
 1. Asseyez-vous **bien droit**, face à l'écran, comme vous voudriez vous tenir.
-2. Vérifiez dans l'aperçu que votre **tête et vos épaules** sont visibles.
+2. Vérifiez que votre **tête et vos épaules** sont visibles (« ✓ On vous voit bien »).
 3. Cliquez sur **Calibrer ma posture** et restez immobile 3 secondes. Si vous bougez, la calibration est refusée : recommencez.
 
 > Pour une mesure stable, vos épaules ne doivent pas être tout en bas de l'image : inclinez l'écran vers le bas ou reculez un peu. L'assistant vous prévient si c'est le cas.
@@ -77,7 +79,8 @@ Le liseré et la pastille ne bloquent jamais la souris : vous pouvez cliquer à 
 
 Ouvrez les réglages depuis **l'icône de l'assistant** (ou à l'adresse http://127.0.0.1:8765).
 
-- **Tolérances** (épaules, tête, inclinaison, distance à l'écran) : plus la valeur est basse, plus l'assistant est exigeant. Chaque détection peut être désactivée. Les jauges en direct montrent votre écart actuel et le seuil, pour régler en voyant l'effet.
+- **Exigence** : **Souple** (moins d'alertes), **Normal** (conseillé) ou **Exigeant** (les moindres écarts). Un clic règle toutes les tolérances.
+- **Tolérances** (épaules, tête, inclinaison, distance à l'écran), pour un réglage fin : plus la valeur est basse, plus l'assistant est exigeant. Chaque détection peut être désactivée. Les jauges en direct (une par détection active) montrent votre écart actuel et le seuil, pour régler en voyant l'effet. Déréglé ? **Rétablir les réglages conseillés** (onglet Réglages, carte Système) remet détections, tolérances et signalement aux valeurs de départ, sans toucher aux calibrations.
 - **Halo après** : combien de secondes de mauvaise posture avant le liseré.
 - **Rappel « Redressez-vous »** : l'activer ou non, et après combien de temps.
 - **Position** : le coin de l'écran où apparaît la pastille (le liseré suit le bord haut ou bas).
@@ -99,7 +102,7 @@ Bureau, maison, café… Chaque lieu garde ses propres calibrations (une par éc
 
 ### Menu de l'icône (clic droit sous Windows, clic sur Mac)
 
-- **Ouvrir les réglages**
+- **Ouvrir l'assistant** : la page d'accueil, les réglages et le rapport
 - **Lieu de travail** : passer d'un lieu à l'autre
 - **Pause** : à utiliser pendant une **visio**, la webcam est libérée pour Teams, Zoom, etc. Recliquez pour reprendre.
 - **Lancer à l'ouverture de session**
