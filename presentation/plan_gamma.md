@@ -134,7 +134,7 @@ Samir Khaldi · M2 Ynov · novembre 2026
 
 - **La détection rejoue le même verdict** : l'évaluation relancée le 24 nov. donne des sorties **identiques** à celles du 20 nov.
 - **Le logiciel se réinstalle et ses tests repassent** : `requirements.lock`, MediaPipe épinglé, CI à chaque push.
-- **Livraison** : exe Windows et app Mac construits par GitHub Actions, attachés aux releases v0.2.0, v0.3.0, v1.0.0.
+- **Livraison** : exe Windows et app Mac construits par GitHub Actions, attachés aux releases v0.2.0, v0.3.0, v1.0.0 et v1.1.0.
 - **Historique git** : une branche par fonctionnalité, fusionnées dans `develop`, versions sur `main`.
 
 ---
