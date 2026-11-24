@@ -57,7 +57,7 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
   - Aucune nouvelle dépendance : `urllib` de la bibliothèque standard.
   - Piège : sans `User-Agent` explicite, le pare-feu de Hugging Face renvoie 403 à `urllib`.
 - Réponse du LLM affichée en `textContent`, jamais interprétée comme du HTML.
-- `mon_script.py` : test autonome du LLM avec le `.env`, hors application.
+- `essais/essayer_llm.py` (anciennement `mon_script.py`) : test autonome du LLM avec le `.env`, hors application.
 - Tests : 42 OK (statistiques, coach simulé, hystérésis, token jamais renvoyé, lieux, écrans multiples).
 
 ## 0.3.0 : support macOS
@@ -144,7 +144,7 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
 
 - **Décision : no-go.** La profondeur ne fait pas mieux que la mesure 2D actuelle et ne distingue pas plus qu'elle la tête en avant du regard vers le clavier. Elle coûte cher : 2,3 s par image sur 1 cœur, 0,6 s sur 4.
 - Limite : 7 mesures par posture seulement, à cause de cette lenteur, et la mesure droite dérive entre le début et la fin (« droit2 »).
-- Test du LLM Hugging Face (routeur HF, Qwen 3.8, facturé à `ynov`) : `mon_script.py` envoie des statistiques de posture, uniquement des chiffres, et reçoit 3 conseils en 1,4 s. Le token est dans `.env`, exclu de git.
+- Test du LLM Hugging Face (routeur HF, Qwen 3.8, facturé à `ynov`) : `mon_script.py` (aujourd'hui `essais/essayer_llm.py`) envoie des statistiques de posture, uniquement des chiffres, et reçoit 3 conseils en 1,4 s. Le token est dans `.env`, exclu de git.
 
 ### 2026-10-30 : webcam déplacée (F13), essai n° 1
 - Constat : déplacer ou incliner l'ordinateur fausse la calibration. Recalibrer à chaque fois est inacceptable pour l'utilisateur.
@@ -157,7 +157,7 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
 
 ### 2026-10-30 : démarche étape par étape (une détection, un paramètre)
 - Plusieurs détections ajoutées d'un coup rendaient les erreurs impossibles à attribuer. Désormais : un paramètre par étape, critères fixés avant l'essai, seuil réglé sur les essais enregistrés (`essais/rejouer.py --etape N`), puis essai de validation.
-- Documents pour le formateur : `specifications-assistant-postural.docx` (exigences, critères d'acceptation CA1 à CA20, protocole d'essai) et `Specifications_Assistant_Posture.docx` (version complète).
+- Documents pour le formateur (dans `docs/`) : `specifications-assistant-postural.docx` (exigences, critères d'acceptation CA1 à CA20, protocole d'essai) et `Specifications_Assistant_Posture.docx` (version complète).
 
 **Étape 1, posture affaissée.** Paramètre : hauteur du haut de la tête (estimé à 1,5 écart d'yeux au-dessus des yeux) jusqu'aux épaules, divisée par la largeur des épaules. C'est un rapport interne au corps, donc insensible à un déplacement de l'ordinateur.
 - Seuil : 3 % de raccourcissement.
