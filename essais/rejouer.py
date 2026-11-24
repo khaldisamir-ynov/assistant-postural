@@ -6,7 +6,7 @@ Plusieurs essais (motifs acceptes, ex. essais\\donnees\\genere\\serie_*\\landmar
 le total d'echecs, a comparer avant et apres chaque modification.
 --etape N : detections des etapes 1 a N actives, postures de ces etapes notees (defaut : derniere etape).
 Reglages : valeurs par defaut de l'application (posture/state.py) ; --seuil / --angle remplacent les tolerances.
-Criteres (specifications-assistant-postural.docx) :
+Criteres (docs/specifications-assistant-postural.docx) :
     CA1 bonne posture -> aucune alerte et au plus 10 % des images signalees
     CA2 mauvaise posture -> au moins une alerte, le bon motif sur au moins 90 % des images, un faux motif sur 10 % au plus
     CA3 personne immobile -> bruit de chaque parametre actif inferieur au tiers de sa tolerance

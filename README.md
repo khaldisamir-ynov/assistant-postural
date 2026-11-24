@@ -188,6 +188,11 @@ Sur Mac : mêmes commandes avec `.venv/bin/` au lieu de `.\.venv\Scripts\`. L'ap
 | `posture/autostart.py` | Lancement à l'ouverture de session (registre Windows ou LaunchAgent macOS) |
 | `posture/index.html` | Interface de configuration, **générée** par `frontend/` (ne pas modifier à la main) |
 | `frontend/` | Sources de l'interface : React + TypeScript + Tailwind + composants [shadcn/ui](https://ui.shadcn.com) |
+| `tests/` | Tests automatiques : `test_X.py` vérifie `posture/X.py` |
+| `essais/` | Laboratoire, jamais livré : banc d'essai (`enregistrer.py`, `rejouer.py`), comparaisons, sondes. Enregistrements dans `essais/donnees/`, exclus de git |
+| `presentation/` | Soutenance : évaluation (`evaluation.ipynb`), performance, évolution du projet |
+| `docs/` | Guide d'apprentissage de la computer vision, spécifications Word pour le formateur |
+| `SPECIFICATIONS.md`, `SUIVI_DEVELOPPEMENT.md` | Le contrat (exigences, critères, résultats) et le journal daté |
 
 **Principe** : avec une webcam de face, l'avachissement se voit à la descente des épaules et la tête en avant au rapprochement oreilles-épaules. Les mesures sont divisées par la largeur des épaules pour ne pas dépendre de la distance à la caméra.
 
