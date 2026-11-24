@@ -308,12 +308,21 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
 - CI Windows et macOS : `npm ci` + `npm run build` avant les tests (vérifie aussi les types) ; `build.ps1` idem. `tests/test_state.py` lit maintenant les curseurs dans `frontend/src/lib/constants.ts`.
 - Vérifié dans le navigateur (état calibré avec statistiques et historique, rapport, réglages, niveaux, notification, fenêtre d'arrêt, parcours complet du guide), sans erreur console. Pas encore vu avec une vraie webcam ni dans l'exe.
 
+### 2026-11-24 : preuves pour la soutenance
+- **Reproductibilité** : l'évaluation (`presentation/evaluation.ipynb`) rejouée avec le code actuel redonne des sorties identiques, au caractère près, à celles du 2026-11-20.
+- **Vie privée (C7), audit du code** : aucune écriture d'image ; JPEG en mémoire seulement pour l'aperçu local ; un seul appel sortant (`coach.py`, rapport par IA à la demande, chiffres agrégés) ; la page compilée ne charge rien d'Internet.
+- **Usage réel, 1 h** (`presentation/mesurer_journee.py`, résultats dans `presentation/mesures/`) : processeur moyen 1,35 % de la machine (p95 1,6 %, max 3,0 %), mémoire 310 à 315 Mo : C3 tenu sur une heure, et plus seulement sur 30 s. Hors champ vérifié (C5).
+- **Constat** : après calibration (« Maison-table-haute », posture 2,5 %, « trop près » activé), environ 100 alertes par heure, de 4 s en médiane, alerte 30 % du temps. Selon l'utilisateur, il était bien penché ou accoudé à la table haute : alertes justes (retour d'usage, sans consigne enregistrée). 3 pastilles seulement sur environ 100 liserés. À refaire au réglage Normal sur une journée.
+- **Plusieurs écrans (C6), essai court** : après l'ajout du 2e écran sur « maison-canapé » (11 h 20), 1 alerte d'1 s en 81 s, contre 3 en 32 s juste avant ; ressenti de l'utilisateur : « plutôt bien ». Preuve partielle : l'écran regardé n'était pas journalisé.
+- `SPECIFICATIONS.md` § 6.0 : bilan critère par critère, qui remplace comme référence le tableau historique « 11 critères sur 16 » (§ 6.1, anciens détecteurs). Plan de présentation : `presentation/plan_gamma.md`.
+- Rangement : `docs/` (guide d'apprentissage, spécifications Word), `mon_script.py` devenu `essais/essayer_llm.py`.
+
 ## Prochaines étapes
 
 - [ ] Tester l'app macOS sur un vrai Mac : lancement, autorisation caméra, icône de barre des menus, halo et pastille.
-- [ ] Utiliser le MVP une journée complète : gêne du halo et de la pastille, fréquence des alertes, CPU.
+- [ ] Utiliser le MVP une journée complète au réglage Normal : gêne du halo et de la pastille, fréquence des alertes (1re heure le 2026-11-24 : environ 100 alertes par heure en réglage strict). CPU : tenu sur 1 h.
 - [ ] Icône dédiée pour l'exe (actuellement l'icône PyInstaller par défaut).
 - [ ] Limites connues : écran principal seulement, position recalculée seulement au changement de coin (barre des tâches déplacée en cours de route non prise en compte).
-- [ ] Historique sur plusieurs jours ; bilan du coach proposé automatiquement en fin de journée.
-- [ ] CI Windows écrite (`.github/workflows/windows.yml` : tests à chaque push, exe ajouté à la release sur un tag `v*`), pas encore lancée sur GitHub.
+- [x] Historique sur plusieurs jours (7 derniers jours dans la page et le rapport). Reste : bilan proposé automatiquement en fin de journée.
+- [x] CI Windows (`.github/workflows/windows.yml`) : tests et compilation de l'interface à chaque push, verte sur `develop` le 2026-11-24.
 - [ ] Piste : signature de l'exe (évite l'avertissement SmartScreen).

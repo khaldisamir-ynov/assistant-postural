@@ -410,7 +410,29 @@ Le jeu généré reste sur le disque (`essais/donnees/genere/`, exclu de git) : 
 
 ## 6. Résultats
 
-### 6.1 Banc d'essai du 2026-10-30
+### 6.0 Bilan au 2026-11-24 (état actuel, référence pour la soutenance)
+
+Réglages par défaut de la version actuelle (posture affaissée 3 %, penché 6°). Les § 6.1 et 6.2 sont l'historique du 2026-10-30, avec des détecteurs retirés depuis.
+
+| Critère | Preuve | Résultat | Statut |
+|---|---|---|---|
+| C1 « alerte » : bonne posture sans alerte | `presentation/evaluation.ipynb` § 2, 4 séances de bureau | **0 fausse alerte sur 12 épisodes** (droit, droit2, clavier) | ✅ |
+| C2 « alerte » : mauvaise posture alertée | même source | **10 sur 12** ; ratés : l'avachi, séances A et B | 🟡 |
+| C1 / C2 « images » | notebook § 1, 6 836 images | précision 94 %, rappel 80 %, F1 0,86, fausses alertes 5,2 % ; aucun seuil ne sépare l'avachi dans A et B (notebook § 3) | 🟡 |
+| C3 Performance | `presentation/mesures/journee_2026-11-24_10h54.csv` : **1 h d'usage réel**, échantillon toutes les 5 s | processeur moyen **1,35 %** de la machine (p95 1,6 %, max 3,0 %), mémoire 310 à 315 Mo | ✅ |
+| C4 Tests | `pytest`, CI Windows sur `develop` | 76 réussis, 1 ignoré (Mac) ; CI verte | ✅ |
+| C5 Hors champ / pause / webcam occupée | même journal (état chaque seconde) | hors champ ✅ (10 s à 11 h 17, aucune alerte) ; pause et webcam occupée : couverts par les tests, pas encore à la main | 🟡 |
+| C6 Écrans multiples | tests automatiques ; journal du 2026-11-24 | essai court : après l'ajout du 2e écran, 1 alerte d'1 s en 81 s (contre 3 en 32 s juste avant), ressenti « plutôt bien » ; l'écran regardé n'était pas journalisé | 🟡 partiel |
+| C7 Vie privée | audit du code du 2026-11-24 | aucune écriture d'image ; JPEG en mémoire seulement pour l'aperçu local (`127.0.0.1`) ; un seul appel sortant (`coach.py`, rapport par IA à la demande, chiffres agrégés) ; la page ne charge rien d'Internet ; dossier de réglages : 4 fichiers texte | ✅ |
+| C11 Choix du modèle | § 6.6 | aucun VLM ni LLM ne fait mieux que MediaPipe | ✅ |
+| C16 Rapport local | `tests/test_coach.py` | déterministe, sans réseau | ✅ |
+| Reproductibilité | réexécution du notebook le 2026-11-24, code actuel | sorties **identiques** à celles du 2026-11-20 | ✅ |
+
+**Première heure d'usage réel** (même journal, 2026-11-24, lieu « Maison-table-haute », réglages plus stricts que les défauts : posture 2,5 %, « trop près » activé). Sur les 33 min qui suivent la calibration : état OK 56 % du temps, alerte 30 % ; 56 alertes (environ 100 par heure), de 4 s en médiane, dont 3 assez longues pour la pastille. Retour de l'utilisateur : il était effectivement penché ou accoudé à la table haute, les alertes correspondaient donc à sa posture (retour d'usage, pas une vérité terrain enregistrée avec consigne). L'escalade a joué son rôle : sur environ 100 liserés de quelques secondes, 3 seulement sont devenus une pastille. Reste à valider qu'à ce rythme l'outil reste supportable sur une journée, au réglage Normal.
+
+### 6.1 Banc d'essai du 2026-10-30 (historique)
+
+*Historique : détecteurs de l'époque (épaules, tête), avant la démarche étape par étape. Le bilan actuel est au § 6.0.*
 
 Une personne, une séance, Windows 11, webcam intégrée, réglages par défaut (épaules 5 %, tête 5 %, inclinaison 10 %, distance 25 %, main 2,0, délai 2 s). Environ 360 images par posture.
 
@@ -595,7 +617,7 @@ Point faible confirmé : **l'avachi**. Sur 3 des 4 séances, la hauteur tête-é
 | 6 | Se tourner vers le 2e écran (déjà ajouté) | Pas d'alerte, « écran 2 » | Écrans multiples |
 | 7 | Menu de l'icône → **Lieu de travail** → Maison | Changement de lieu en un clic | Pas de recalibration à chaque changement d'endroit |
 | 8 | Onglet **Rapport** → **Générer mon rapport**, puis **Rédiger avec l'IA** | Le même rapport en 4 parties : calculé sur le poste, puis rédigé par Qwen (Hugging Face) | Par défaut rien ne sort ; l'IA ne reçoit que des chiffres, à la demande |
-| 9 | Montrer le tableau du § 6 | 11 critères sur 16, les échecs expliqués | La démarche : mesurer, décider, puis vérifier |
+| 9 | Montrer le bilan du § 6.0 | 0 fausse alerte sur 12 épisodes, 10 mauvaises postures sur 12, l'avachi expliqué | La démarche : mesurer, décider, puis vérifier |
 
 **En cas de problème pendant la démo** :
 - le signalement ne se déclenche pas → bouton « Tester le signalement » ;
