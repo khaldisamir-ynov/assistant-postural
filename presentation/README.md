@@ -6,6 +6,9 @@ Dossier de la soutenance.
 - Fiche mesurée sur MediaPipe Pose : [baseline.md](baseline.md).
 - Justesse de la détection (précision, rappel, F1, matrices de confusion, sensibilité au seuil) : [evaluation.ipynb](evaluation.ipynb).
 - Étapes du modèle et du logiciel, reproductibilité, matériel et usage : [evolution.md](evolution.md).
+- Mesure en usage réel (processeur, mémoire, état chaque seconde) : [mesurer_journee.py](mesurer_journee.py), résultats dans [mesures/](mesures/).
+- Plan de la présentation (cartes à coller dans Gamma, notes pour l'oral) : [plan_gamma.md](plan_gamma.md).
+- Bilan critère par critère : `SPECIFICATIONS.md` § 6.0.
 
 Le reste du propos s'appuie sur les documents déjà écrits :
 
