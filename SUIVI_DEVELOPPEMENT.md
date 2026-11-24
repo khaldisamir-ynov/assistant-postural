@@ -2,7 +2,7 @@
 
 **Objectif** : application locale qui aide à garder une bonne posture toute la journée au bureau, avec une alerte silencieuse et non intrusive.
 
-**Version actuelle** : 1.0.0, premier MVP publié (Windows + macOS). Architecture et commandes dans le [README](README.md).
+**Version actuelle** : 1.1.0 (Windows + macOS) : rapport calculé sur le poste, prise en main guidée, interface React. Premier MVP publié : 1.0.0. Architecture et commandes dans le [README](README.md).
 
 ## Avancement
 
@@ -18,6 +18,7 @@
 | 8 | MVP : paquet Python, tests, arrière-plan (icône), signalement en escalade, exe, démarrage auto | ✅ Fait, publié (v0.2.0) |
 | 9 | Support macOS (Apple Silicon) : app construite par GitHub Actions | 🧪 Construit en CI, à tester sur un vrai Mac |
 | 10 | Modèle Hugging Face : essai profondeur (no-go), statistiques du jour, coach LLM, lissage, lieux, écrans multiples | ✅ Fait, publié dans le MVP v1.0.0 |
+| 11 | Rapport calculé sur le poste, conseils selon les chiffres, prise en main guidée, exigence, interface React + shadcn, preuves en usage réel | ✅ Fait, publié en v1.1.0 |
 
 ## 0.4.0 : statistiques, coach IA Hugging Face, lissage, lieux et écrans multiples
 

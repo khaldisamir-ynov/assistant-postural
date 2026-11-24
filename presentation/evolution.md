@@ -30,6 +30,7 @@ Le point faible assumé : l'avachi au bureau. Selon la séance, il est vu ou non
 | 0.3.0 | Même signalement sur Mac Apple Silicon, app construite par GitHub Actions. Pas encore tenue en main sur un Mac. |
 | 0.4.0, publiée en 1.0.0 | Lissage sur ~1 s, hystérésis, statistiques du jour, lieux, plusieurs écrans, coach. |
 | 13 nov. | Page en trois onglets (Aujourd'hui, Rapport IA, Réglages). Ancien script retiré : une seule voie, le paquet. |
+| 1.1.0 (24 nov.) | Rapport de la journée calculé sur l'ordinateur (IA en option), conseils selon les chiffres, carte « Aujourd'hui » détaillée, guide du premier lancement avec l'image webcam, exigence Souple / Normal / Exigeant, interface React + shadcn/ui. |
 
 ## 3. Mesurer la reproductibilité
 

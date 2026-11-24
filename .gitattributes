@@ -1,0 +1,5 @@
+# Archive « Source code » des releases : l'application seule. Le dépôt garde le banc d'essai, la soutenance et les documents.
+/essais export-ignore
+/presentation export-ignore
+/docs export-ignore
+/tests/test_essais.py export-ignore
