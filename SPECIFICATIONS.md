@@ -419,9 +419,9 @@ Réglages par défaut de la version actuelle (posture affaissée 3 %, penché 6�
 | C1 « alerte » : bonne posture sans alerte | `presentation/evaluation.ipynb` § 2, 4 séances de bureau | **0 fausse alerte sur 12 épisodes** (droit, droit2, clavier) | ✅ |
 | C2 « alerte » : mauvaise posture alertée | même source | **10 sur 12** ; ratés : l'avachi, séances A et B | 🟡 |
 | C1 / C2 « images » | notebook § 1, 6 836 images | précision 94 %, rappel 80 %, F1 0,86, fausses alertes 5,2 % ; aucun seuil ne sépare l'avachi dans A et B (notebook § 3) | 🟡 |
-| C3 Performance | `presentation/mesures/journee_2026-11-24_10h54.csv` : **1 h d'usage réel**, échantillon toutes les 5 s | processeur moyen **1,35 %** de la machine (p95 1,6 %, max 3,0 %), mémoire 310 à 315 Mo | ✅ |
+| C3 Performance | `presentation/mesures/journee_2026-11-24_10h54.csv` : **1 h d'usage réel**, échantillon toutes les 5 s | processeur moyen **1,35 %** de la machine (p95 1,6 %, max 3,0 %), mémoire 310 à 315 Mo ; 2e heure (`…_11h59.csv`, page fermée) : 1,11 % (max 1,6 %), 264 Mo | ✅ |
 | C4 Tests | `pytest`, CI Windows sur `develop` | 76 réussis, 1 ignoré (Mac) ; CI verte | ✅ |
-| C5 Hors champ / pause / webcam occupée | même journal (état chaque seconde) | hors champ ✅ (10 s à 11 h 17, aucune alerte) ; pause et webcam occupée : couverts par les tests, pas encore à la main | 🟡 |
+| C5 Hors champ / pause / webcam occupée | `presentation/mesures/journee_2026-11-24_11h59.csv` (état chaque seconde) | hors champ 21 min 45 s puis 18 min 39 s, **aucune alerte**, retour seul à « OK » ; pause (8 s, 37 s) : processeur à 0,15 %, webcam libérée ; webcam prise par l'application Caméra : « webcam indisponible » 48 s sans alerte, **reprise seule** à sa fermeture | ✅ |
 | C6 Écrans multiples | tests automatiques ; journal du 2026-11-24 | essai court : après l'ajout du 2e écran, 1 alerte d'1 s en 81 s (contre 3 en 32 s juste avant), ressenti « plutôt bien » ; l'écran regardé n'était pas journalisé | 🟡 partiel |
 | C7 Vie privée | audit du code du 2026-11-24 | aucune écriture d'image ; JPEG en mémoire seulement pour l'aperçu local (`127.0.0.1`) ; un seul appel sortant (`coach.py`, rapport par IA à la demande, chiffres agrégés) ; la page ne charge rien d'Internet ; dossier de réglages : 4 fichiers texte | ✅ |
 | C11 Choix du modèle | § 6.6 | aucun VLM ni LLM ne fait mieux que MediaPipe | ✅ |

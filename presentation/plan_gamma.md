@@ -113,7 +113,7 @@ Samir Khaldi · M2 Ynov · novembre 2026
 
 - **Performance (C3), mesurée sur 1 h d'usage réel** : **1,35 %** du processeur en moyenne (p95 1,6 %, pointe 3 %), **310 Mo** de mémoire. Budget : 5 % et 500 Mo. Inférence : 20 ms par image.
 - **Vie privée (C7)** : audit du code, aucune image écrite ni envoyée. Seul appel réseau : le rapport par IA, sur demande, avec des chiffres agrégés.
-- **Hors champ (C5)** : vérifié en usage réel, « Hors champ » sans alerte. Pause et webcam occupée : couvertes par les tests automatiques.
+- **Hors champ, pause, webcam occupée (C5)**, vérifiés en usage réel : 40 min d'absence sans aucune alerte et reprise seule au retour ; en pause, le processeur tombe à 0,15 % ; webcam prise par une autre application, puis reprise seule à sa libération.
 - **Plusieurs écrans (C6)** : essayé en usage réel ; après l'ajout du 2e écran, 1 alerte d'1 s en 81 s, contre 3 en 32 s avant.
 - **Fiabilité (C4)** : 76 tests automatiques, CI Windows et macOS.
 
@@ -155,7 +155,7 @@ Samir Khaldi · M2 Ynov · novembre 2026
 - **L'avachi au bureau** est raté dans 2 séances sur 4.
 - **Ordinateur sur les genoux** : hors périmètre (la webcam suit le buste).
 - **Une journée réelle complète** (fréquence des alertes au réglage Normal) et **le Mac** restent à tester.
-- **Écrans multiples et webcam occupée** : vérifiés par les tests automatiques, pas encore à la main.
+- **Écrans multiples** : un essai court en usage réel, sans journal de l'écran regardé.
 
 ---
 
