@@ -43,8 +43,10 @@ Le premier démarrage prend quelques secondes. Une page s'ouvre dans votre navig
 
 ### 2. Calibrer votre bonne posture
 
+La page vous guide en 3 étapes, avec votre image webcam juste à côté : elle vous dit en direct si la webcam vous voit bien, et un trait montre où doivent se trouver vos épaules.
+
 1. Asseyez-vous **bien droit**, face à l'écran, comme vous voudriez vous tenir.
-2. Vérifiez dans l'aperçu que votre **tête et vos épaules** sont visibles.
+2. Vérifiez que votre **tête et vos épaules** sont visibles (« ✓ On vous voit bien »).
 3. Cliquez sur **Calibrer ma posture** et restez immobile 3 secondes. Si vous bougez, la calibration est refusée : recommencez.
 
 > Pour une mesure stable, vos épaules ne doivent pas être tout en bas de l'image : inclinez l'écran vers le bas ou reculez un peu. L'assistant vous prévient si c'est le cas.
@@ -77,14 +79,16 @@ Le liseré et la pastille ne bloquent jamais la souris : vous pouvez cliquer à 
 
 Ouvrez les réglages depuis **l'icône de l'assistant** (ou à l'adresse http://127.0.0.1:8765).
 
-- **Tolérances** (épaules, tête, inclinaison, distance à l'écran) : plus la valeur est basse, plus l'assistant est exigeant. Chaque détection peut être désactivée. Les jauges en direct montrent votre écart actuel et le seuil, pour régler en voyant l'effet.
+- **Exigence** : **Souple** (moins d'alertes), **Normal** (conseillé) ou **Exigeant** (les moindres écarts). Un clic règle toutes les tolérances.
+- **Tolérances** (épaules, tête, inclinaison, distance à l'écran), pour un réglage fin : plus la valeur est basse, plus l'assistant est exigeant. Chaque détection peut être désactivée. Les jauges en direct (une par détection active) montrent votre écart actuel et le seuil, pour régler en voyant l'effet. Déréglé ? **Rétablir les réglages conseillés** (onglet Réglages, carte Système) remet détections, tolérances et signalement aux valeurs de départ, sans toucher aux calibrations.
 - **Halo après** : combien de secondes de mauvaise posture avant le liseré.
 - **Rappel « Redressez-vous »** : l'activer ou non, et après combien de temps.
 - **Position** : le coin de l'écran où apparaît la pastille (le liseré suit le bord haut ou bas).
 - **Tester le signalement** : pour voir à quoi ressemble l'alerte, sans avoir à se tenir mal.
 - **Lancer à l'ouverture de session** : l'assistant démarre tout seul quand vous allumez votre ordinateur.
-- **Aujourd'hui** : pourcentage du temps en bonne posture, temps suivi, nombre d'alertes et motif le plus fréquent. Remis à zéro chaque jour.
-- **Coach IA (facultatif)** : collez votre token [Hugging Face](https://huggingface.co/settings/tokens) (type *Read*), puis cliquez sur **Demander un bilan au coach** : un LLM (Qwen) propose 3 conseils adaptés à votre journée. Champ *Organisation à facturer* : si une organisation (votre école, par exemple) paie vos appels.
+- **Aujourd'hui** : pourcentage du temps en bonne posture, temps suivi, temps en mauvaise posture, nombre d'alertes. Pour chaque mauvaise posture : sa durée, sa part du temps suivi, ce que la détection mesure et sa durée habituelle les jours précédents ; les détections désactivées sont rappelées. Sous le déroulé par demi-heure : le meilleur et le plus difficile moment. Remis à zéro chaque jour.
+- **Rapport de la journée** : onglet **Rapport** → **Générer mon rapport**. Il fait le bilan (temps suivi, % en bonne posture, comparaison avec les jours précédents), liste les postures à surveiller et les meilleurs et pires moments, puis donne 3 à 5 conseils choisis d'après vos chiffres (postures, longues périodes sans pause, heure la plus difficile, nombre d'alertes). Il est calculé sur votre ordinateur, sans compte ni Internet.
+- **Rapport rédigé par une IA (facultatif)** : collez votre token [Hugging Face](https://huggingface.co/settings/tokens) (type *Read*) dans les réglages, puis cliquez sur **Rédiger avec l'IA** : un LLM (Qwen) rédige le même rapport. Les comptes Hugging Face gratuits doivent acheter des crédits. Champ *Organisation à facturer* : si une organisation (votre école, par exemple) paie vos appels.
 
 Changé de chaise, d'écran ou de place ? Cliquez sur **Recalibrer**.
 
@@ -98,7 +102,7 @@ Bureau, maison, café… Chaque lieu garde ses propres calibrations (une par éc
 
 ### Menu de l'icône (clic droit sous Windows, clic sur Mac)
 
-- **Ouvrir les réglages**
+- **Ouvrir l'assistant** : la page d'accueil, les réglages et le rapport
 - **Lieu de travail** : passer d'un lieu à l'autre
 - **Pause** : à utiliser pendant une **visio**, la webcam est libérée pour Teams, Zoom, etc. Recliquez pour reprendre.
 - **Lancer à l'ouverture de session**
@@ -111,7 +115,7 @@ Bureau, maison, café… Chaque lieu garde ses propres calibrations (une par éc
 - **Tout reste sur votre ordinateur.** Aucune image n'est enregistrée ni envoyée sur Internet.
 - L'application analyse la position de vos oreilles et de vos épaules, image par image, puis oublie l'image.
 - Les réglages de l'interface ne sont accessibles que depuis votre propre ordinateur.
-- **Coach IA** : seulement si vous l'utilisez, les chiffres du jour (minutes, pourcentage, nombre d'alertes) sont envoyés à Hugging Face. Jamais d'image. Votre token reste sur votre ordinateur, dans le fichier de réglages.
+- **Rapport** : calculé sur votre ordinateur, rien n'est envoyé. Seulement si vous cliquez sur **Rédiger avec l'IA**, les chiffres du jour (minutes, pourcentage, nombre d'alertes) sont envoyés à Hugging Face. Jamais d'image. Votre token reste sur votre ordinateur, dans le fichier de réglages.
 - Seuls vos réglages, votre calibration et les compteurs du jour (quelques nombres) sont conservés, dans `%APPDATA%\AssistantPosture\` (Windows) ou `~/Library/Application Support/AssistantPosture/` (Mac).
 
 ---
@@ -150,7 +154,7 @@ Le journal `posture.log` (dans le dossier de réglages indiqué plus haut) conti
 
 ## Pour les développeurs
 
-Python 3.9 à 3.12 (MediaPipe 0.10.21), Windows ou macOS.
+Python 3.9 à 3.12 (MediaPipe 0.10.21), Windows ou macOS. Pour modifier l'interface : Node 20.19 ou plus.
 
 ```powershell
 python -m venv .venv
@@ -158,6 +162,15 @@ python -m venv .venv
 .\.venv\Scripts\python -m posture                              # lancer
 .\.venv\Scripts\python -m pytest                               # tests
 .\build.ps1                                                    # tests + dist\AssistantPosture.exe
+```
+
+**Interface** (`frontend/`, React + shadcn/ui) : compilée en un seul fichier, `posture/index.html` (JS, CSS et police intégrés, rien n'est chargé depuis Internet). Le fichier compilé est versionné : lancer depuis les sources ne demande pas Node.
+
+```powershell
+npm --prefix frontend ci            # une fois
+npm --prefix frontend run dev       # page de développement (rechargement à chaud), branchée sur l'assistant lancé
+npm --prefix frontend run build     # régénère posture/index.html (à commiter)
+npm --prefix frontend run shadcn -- add <composant>   # ajouter un composant shadcn
 ```
 
 Sur Mac : mêmes commandes avec `.venv/bin/` au lieu de `.\.venv\Scripts\`. L'app Mac (`AssistantPosture-macOS.zip`) est construite par GitHub Actions ([`.github/workflows/macos.yml`](.github/workflows/macos.yml)) et ajoutée automatiquement à chaque release `v*`.
@@ -171,9 +184,15 @@ Sur Mac : mêmes commandes avec `.venv/bin/` au lieu de `.\.venv\Scripts\`. L'ap
 | `posture/overlay.py` | Liseré et pastille (tkinter + Win32 ou AppKit) |
 | `posture/tray.py` | Icône de la zone de notification ou de la barre des menus (pystray) |
 | `posture/stats.py` | Compteurs du jour (temps en bonne posture, alertes) |
-| `posture/coach.py` | Conseils d'un LLM Hugging Face à partir des compteurs |
+| `posture/coach.py` | Rapport de la journée à partir des compteurs : calculé sur le poste, ou rédigé par un LLM Hugging Face |
 | `posture/autostart.py` | Lancement à l'ouverture de session (registre Windows ou LaunchAgent macOS) |
-| `posture/index.html` | Interface de configuration |
+| `posture/index.html` | Interface de configuration, **générée** par `frontend/` (ne pas modifier à la main) |
+| `frontend/` | Sources de l'interface : React + TypeScript + Tailwind + composants [shadcn/ui](https://ui.shadcn.com) |
+| `tests/` | Tests automatiques : `test_X.py` vérifie `posture/X.py` |
+| `essais/` | Laboratoire, jamais livré : banc d'essai (`enregistrer.py`, `rejouer.py`), comparaisons, sondes. Enregistrements dans `essais/donnees/`, exclus de git |
+| `presentation/` | Soutenance : évaluation (`evaluation.ipynb`), performance, évolution du projet |
+| `docs/` | Guide d'apprentissage de la computer vision, spécifications Word pour le formateur |
+| `SPECIFICATIONS.md`, `SUIVI_DEVELOPPEMENT.md` | Le contrat (exigences, critères, résultats) et le journal daté |
 
 **Principe** : avec une webcam de face, l'avachissement se voit à la descente des épaules et la tête en avant au rapprochement oreilles-épaules. Les mesures sont divisées par la largeur des épaules pour ne pas dépendre de la distance à la caméra.
 

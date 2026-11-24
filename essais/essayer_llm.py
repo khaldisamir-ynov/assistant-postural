@@ -1,7 +1,7 @@
 """Test d'appel au LLM Hugging Face (routeur HF, facture a l'organisation via HF_BILL_TO).
 
 Envoie uniquement des statistiques de posture (des chiffres, jamais d'image) et demande 3 conseils.
-Configuration dans .env (voir HUGGING-FACE.md). Usage : .\\.venv\\Scripts\\python mon_script.py
+Configuration dans .env (voir HUGGING-FACE.md). Usage, depuis la racine : .\\.venv\\Scripts\\python essais\\essayer_llm.py
 """
 import os
 import sys

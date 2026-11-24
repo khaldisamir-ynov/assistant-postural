@@ -1,11 +1,12 @@
 import json
+import socket
 import threading
 import urllib.error
 import urllib.request
 
 import pytest
 
-from posture import server
+from posture import server, stats
 from posture.state import state
 
 
@@ -43,6 +44,13 @@ def test_foreign_host_is_rejected(base_url):
 
 def test_non_json_post_is_rejected(base_url):
     assert call(f"{base_url}/api/settings", b"enabled=false")[0] == 403
+    # Longueur negative : refusee sans lire le corps (sinon la lecture attendrait la fin de la connexion). Aucun corps
+    # envoye ici : un corps non lu ferait couper la connexion par Windows avant la reponse
+    host, port = base_url.rsplit("/", 1)[1].split(":")
+    with socket.create_connection((host, int(port)), timeout=5) as s:
+        s.sendall(f"POST /api/settings HTTP/1.1\r\nHost: {host}:{port}\r\nContent-Type: application/json\r\n"
+                  "Content-Length: -1\r\n\r\n".encode())
+        assert s.recv(64).startswith(b"HTTP/1.0 413")
 
 
 def test_settings_are_validated(base_url):
@@ -51,6 +59,19 @@ def test_settings_are_validated(base_url):
     code, body = post_json(f"{base_url}/api/settings", {"alert_delay": 5})
     assert code == 200 and json.loads(body)["alert_delay"] == 5
     assert state.settings["alert_delay"] == 5
+
+
+def test_reset_restores_recommended_settings_only(base_url):
+    from posture.state import DEFAULTS
+    places = {"Mon poste": [[0.5, 0.3, 0.2, 0.0, 0.6]]}
+    state.settings = {**state.settings, "places": places, "enabled": False, "coach_bill_to": "ynov"}
+    post_json(f"{base_url}/api/settings", {"alert_delay": 9, "detect_head": True, "overlay_corner": "bottom-left"})
+    assert post_json(f"{base_url}/api/settings", {"reset": "oui"})[0] == 400
+    code, body = post_json(f"{base_url}/api/settings", {"reset": True})
+    assert code == 200 and json.loads(body)["alert_delay"] == DEFAULTS["alert_delay"]
+    s = state.settings
+    assert (s["detect_head"], s["overlay_corner"]) == (DEFAULTS["detect_head"], DEFAULTS["overlay_corner"])
+    assert (s["places"], s["enabled"], s["coach_bill_to"]) == (places, False, "ynov")  # le reste ne bouge pas
 
 
 def test_second_instance_cannot_bind_same_port(base_url):
@@ -65,9 +86,19 @@ def test_token_is_validated_and_never_sent_back(base_url):
     assert "hf_" not in call(f"{base_url}/api/state")[1].decode()
 
 
-def test_coach_needs_token(base_url):
-    code, body = post_json(f"{base_url}/api/coach", {})
+def test_ai_report_needs_token(base_url):
+    code, body = post_json(f"{base_url}/api/coach", {"source": "hf"})
     assert code == 400 and "token" in json.loads(body)["error"]
+    assert post_json(f"{base_url}/api/coach", {"source": "ailleurs"})[0] == 400
+
+
+def test_local_report_needs_no_token(base_url):
+    from posture.stats import empty
+    code, body = post_json(f"{base_url}/api/coach", {})
+    assert code == 400 and "statistiques" in json.loads(body)["error"]
+    state.stats = {**empty("2026-11-20"), "good": 600.0, "bad": 120.0, "head": 120.0}
+    code, body = post_json(f"{base_url}/api/coach", {})
+    assert code == 200 and json.loads(body)["advice"].startswith("## Bilan\nTemps suivi aujourd'hui : 12 min")
 
 
 def test_places_api(base_url):
@@ -81,4 +112,5 @@ def test_history_lists_tracked_days(base_url):
     from posture.stats import empty
     state.stats = {**empty("2026-10-30"), "good": 120.0, "bad": 60.0}
     code, body = call(f"{base_url}/api/history")
-    assert code == 200 and json.loads(body)["days"] == [{"date": "2026-10-30", "minutes": 3, "good_pct": 67, "alerts": 0}]
+    assert code == 200 and json.loads(body)["days"] == [{"date": "2026-10-30", "minutes": 3, "good_pct": 67, "alerts": 0,
+                                                         "reasons": dict.fromkeys(stats.REASONS, 0)}]

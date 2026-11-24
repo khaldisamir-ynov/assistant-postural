@@ -11,7 +11,6 @@ Reponses brutes dans <dossier>/approches.jsonl : une relance ne refait que les a
 une 2e fois (stabilite). Synthese ecrite dans essais/donnees/comparaison.json (page de rapport).
 """
 import json
-import math
 import os
 import statistics
 import sys
@@ -32,12 +31,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from comparer_vlm import data_url, parse  # noqa: E402
 from posture import coach, core, detector  # noqa: E402
 from posture.state import state  # noqa: E402
-from rejouer import settings_for  # noqa: E402
+from rejouer import CLASSES, LABELS, app_class, settings_for, wilson  # noqa: E402
 
-CLASSES = ("correcte", "affaissee", "penchee", "trop_pres", "menton_main")
-# Consigne de enregistrer.py -> classe attendue ; telephone et boire : rapportes a part, non notes
-LABELS = {"droit": "correcte", "droit2": "correcte", "clavier": "correcte", "tete_avant": "affaissee",
-          "avache": "affaissee", "penche": "penchee", "trop_pres": "trop_pres", "menton_main": "menton_main"}
 MAIN_TASK = {"droit", "droit2", "clavier", "tete_avant", "avache", "penche"}  # detections actives par defaut
 VLMS = ["Qwen/Qwen3-VL-30B-A3B-Instruct", "google/gemma-4-26B-A4B-it"]
 LLMS = {coach.MODEL.split(":")[0]: "none", "openai/gpt-oss-120b": "low"}  # modele -> effort de reflexion
@@ -59,24 +54,6 @@ PROMPTS = {
           "Coordonnees normalisees x, y entre 0 et 1, y vers le bas, image en miroir. Reference (assise droite) :\n"
           "{ref}\nMaintenant :\n{cur}\nPar rapport a la reference, quelle est sa posture ? " + CHOICES),
 }
-
-
-def wilson(k, n, z=1.96):
-    """Intervalle de confiance a 95 % d'une proportion k/n (fiable meme sur 20 photos ou a 0 %)."""
-    if n == 0:
-        return 0.0, 1.0
-    p, d = k / n, 1 + z * z / n
-    c, h = (p + z * z / (2 * n)) / d, z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
-    return max(0.0, c - h), min(1.0, c + h)
-
-
-def app_class(status):
-    """Motif de l'application -> classe (priorites de update_status : trop pres masque les autres)."""
-    for flag, cls in (("close", "trop_pres"), ("hand", "menton_main"), ("lean", "penchee"),
-                      ("posture", "affaissee"), ("head", "affaissee")):
-        if status.get(flag):
-            return cls
-    return "correcte"
 
 
 def scores(rows):

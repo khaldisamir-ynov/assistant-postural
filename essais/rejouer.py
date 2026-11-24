@@ -6,7 +6,7 @@ Plusieurs essais (motifs acceptes, ex. essais\\donnees\\genere\\serie_*\\landmar
 le total d'echecs, a comparer avant et apres chaque modification.
 --etape N : detections des etapes 1 a N actives, postures de ces etapes notees (defaut : derniere etape).
 Reglages : valeurs par defaut de l'application (posture/state.py) ; --seuil / --angle remplacent les tolerances.
-Criteres (specifications-assistant-postural.docx) :
+Criteres (docs/specifications-assistant-postural.docx) :
     CA1 bonne posture -> aucune alerte et au plus 10 % des images signalees
     CA2 mauvaise posture -> au moins une alerte, le bon motif sur au moins 90 % des images, un faux motif sur 10 % au plus
     CA3 personne immobile -> bruit de chaque parametre actif inferieur au tiers de sa tolerance
@@ -14,6 +14,7 @@ Criteres (specifications-assistant-postural.docx) :
 import argparse
 import glob
 import json
+import math
 import statistics
 import sys
 from collections import Counter, deque
@@ -36,6 +37,28 @@ STEPS = {
 LAST_STEP = max(STEPS)
 CALIBRATION = (4.0, 7.0)  # secondes de « droit » utilisees comme calibration (installe, immobile)
 GOOD_MAX, BAD_MIN = 0.10, 0.90
+CLASSES = ("correcte", "affaissee", "penchee", "trop_pres", "menton_main")
+# Consigne de enregistrer.py -> classe attendue ; telephone et boire : rapportes a part, non notes
+LABELS = {"droit": "correcte", "droit2": "correcte", "clavier": "correcte", "tete_avant": "affaissee",
+          "avache": "affaissee", "penche": "penchee", "trop_pres": "trop_pres", "menton_main": "menton_main"}
+
+
+def wilson(k, n, z=1.96):
+    """Intervalle de confiance a 95 % d'une proportion k/n (fiable meme sur 20 photos ou a 0 %)."""
+    if n == 0:
+        return 0.0, 1.0
+    p, d = k / n, 1 + z * z / n
+    c, h = (p + z * z / (2 * n)) / d, z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return max(0.0, c - h), min(1.0, c + h)
+
+
+def app_class(status):
+    """Motif de l'application -> classe (priorites de update_status : trop pres masque les autres)."""
+    for flag, cls in (("close", "trop_pres"), ("hand", "menton_main"), ("lean", "penchee"),
+                      ("posture", "affaissee"), ("head", "affaissee")):
+        if status.get(flag):
+            return cls
+    return "correcte"
 
 
 def landmarks(row):
@@ -68,7 +91,8 @@ def simulate(rows, settings):
     """Rejoue des images dans update_status (memes lissages que detector._loop). Retourne les statistiques."""
     recent, recent_hand = deque(maxlen=detector.SMOOTHING_FRAMES), deque(maxlen=detector.SMOOTHING_FRAMES)
     bad_since, prev = None, None
-    out = {"n": len(rows), "flagged": 0, "alerts": 0, "reasons": Counter(), "dev": {"posture": [], "lean": []}}
+    out = {"n": len(rows), "flagged": 0, "alerts": 0, "reasons": Counter(), "dev": {"posture": [], "lean": []},
+           "frames": []}  # frames : etat de chaque image (copie de state.status), pour les metriques par image
     for r in rows:
         lm = landmarks(r)
         m = core.extract_metrics(lm)
@@ -79,6 +103,7 @@ def simulate(rows, settings):
         smoothed = tuple(sum(v) / len(recent) for v in zip(*recent)) if recent else None
         bad_since = detector.update_status(smoothed, settings, bad_since, r["t"], hand)
         st = state.status
+        out["frames"].append(st)
         for name, values in out["dev"].items():
             if f"{name}_dev" in st:
                 values.append(st[f"{name}_dev"])

@@ -2,7 +2,7 @@
 
 **Objectif** : application locale qui aide à garder une bonne posture toute la journée au bureau, avec une alerte silencieuse et non intrusive.
 
-**Version actuelle** : 1.0.0, premier MVP publié (Windows + macOS). Architecture et commandes dans le [README](README.md).
+**Version actuelle** : 1.1.0 (Windows + macOS) : rapport calculé sur le poste, prise en main guidée, interface React. Premier MVP publié : 1.0.0. Architecture et commandes dans le [README](README.md).
 
 ## Avancement
 
@@ -18,6 +18,7 @@
 | 8 | MVP : paquet Python, tests, arrière-plan (icône), signalement en escalade, exe, démarrage auto | ✅ Fait, publié (v0.2.0) |
 | 9 | Support macOS (Apple Silicon) : app construite par GitHub Actions | 🧪 Construit en CI, à tester sur un vrai Mac |
 | 10 | Modèle Hugging Face : essai profondeur (no-go), statistiques du jour, coach LLM, lissage, lieux, écrans multiples | ✅ Fait, publié dans le MVP v1.0.0 |
+| 11 | Rapport calculé sur le poste, conseils selon les chiffres, prise en main guidée, exigence, interface React + shadcn, preuves en usage réel | ✅ Fait, publié en v1.1.0 |
 
 ## 0.4.0 : statistiques, coach IA Hugging Face, lissage, lieux et écrans multiples
 
@@ -57,7 +58,7 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
   - Aucune nouvelle dépendance : `urllib` de la bibliothèque standard.
   - Piège : sans `User-Agent` explicite, le pare-feu de Hugging Face renvoie 403 à `urllib`.
 - Réponse du LLM affichée en `textContent`, jamais interprétée comme du HTML.
-- `mon_script.py` : test autonome du LLM avec le `.env`, hors application.
+- `essais/essayer_llm.py` (anciennement `mon_script.py`) : test autonome du LLM avec le `.env`, hors application.
 - Tests : 42 OK (statistiques, coach simulé, hystérésis, token jamais renvoyé, lieux, écrans multiples).
 
 ## 0.3.0 : support macOS
@@ -144,7 +145,7 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
 
 - **Décision : no-go.** La profondeur ne fait pas mieux que la mesure 2D actuelle et ne distingue pas plus qu'elle la tête en avant du regard vers le clavier. Elle coûte cher : 2,3 s par image sur 1 cœur, 0,6 s sur 4.
 - Limite : 7 mesures par posture seulement, à cause de cette lenteur, et la mesure droite dérive entre le début et la fin (« droit2 »).
-- Test du LLM Hugging Face (routeur HF, Qwen 3.8, facturé à `ynov`) : `mon_script.py` envoie des statistiques de posture, uniquement des chiffres, et reçoit 3 conseils en 1,4 s. Le token est dans `.env`, exclu de git.
+- Test du LLM Hugging Face (routeur HF, Qwen 3.8, facturé à `ynov`) : `mon_script.py` (aujourd'hui `essais/essayer_llm.py`) envoie des statistiques de posture, uniquement des chiffres, et reçoit 3 conseils en 1,4 s. Le token est dans `.env`, exclu de git.
 
 ### 2026-10-30 : webcam déplacée (F13), essai n° 1
 - Constat : déplacer ou incliner l'ordinateur fausse la calibration. Recalibrer à chaque fois est inacceptable pour l'utilisateur.
@@ -157,7 +158,7 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
 
 ### 2026-10-30 : démarche étape par étape (une détection, un paramètre)
 - Plusieurs détections ajoutées d'un coup rendaient les erreurs impossibles à attribuer. Désormais : un paramètre par étape, critères fixés avant l'essai, seuil réglé sur les essais enregistrés (`essais/rejouer.py --etape N`), puis essai de validation.
-- Documents pour le formateur : `specifications-assistant-postural.docx` (exigences, critères d'acceptation CA1 à CA20, protocole d'essai) et `Specifications_Assistant_Posture.docx` (version complète).
+- Documents pour le formateur (dans `docs/`) : `specifications-assistant-postural.docx` (exigences, critères d'acceptation CA1 à CA20, protocole d'essai) et `Specifications_Assistant_Posture.docx` (version complète).
 
 **Étape 1, posture affaissée.** Paramètre : hauteur du haut de la tête (estimé à 1,5 écart d'yeux au-dessus des yeux) jusqu'aux épaules, divisée par la largeur des épaules. C'est un rapport interne au corps, donc insensible à un déplacement de l'ordinateur.
 - Seuil : 3 % de raccourcissement.
@@ -269,11 +270,61 @@ Enregistrement de 10 postures × 12 s (~360 images chacune), uniquement les 33 r
 - `essais/rejouer.py` reprend la liste des motifs de `posture/stats.py` au lieu d'en garder une copie ; motif `slouch` mort retiré de `essais/comparer_approches.py`.
 - Aucune fonction inutilisée trouvée dans `posture/` et `essais/` ; pas de refonte plus large : le code fait ~4 400 lignes et le banc d'essai en dépend.
 
+### 2026-11-20 : avachi ou clavier, bascule de la tête (C15)
+- Piste du § 8 (priorité 1 bis) : au clavier la tête bascule, en s'avachissant elle ne devrait pas. Règle : épaules qui descendent de plus de *s* **et** bascule (nez par rapport aux oreilles, en écarts d'yeux) sous *b*. Critère C15 écrit avant l'essai (SPECIFICATIONS.md § 4.10), sonde hors ligne sur les 4 séances de bureau (`essais/sonde_bascule.py`), sans nouvel enregistrement.
+- Médianes (descente des épaules / bascule) : avachi 0,048 / +0,05, 0,019 / +0,04, 0,108 / +0,55, 0,083 / +0,25 ; clavier 0,055 / −0,04, −0,006 / +0,01, 0,051 / +0,46, 0,013 / +0,13 (30/10, A, B, C).
+- **L'hypothèse ne tient pas** : en s'avachissant, la tête bascule autant ou plus qu'au clavier, dans les 4 séances. Dans A, les épaules ne descendent que de 1,9 %. Aucun couple (*s*, *b*) ne passe dans les 4 séances (C15a) ; un couple choisi sur 3 séances échoue sur la 4e, dans les 4 cas (C15b).
+- Décision : piste écartée. Dans B, droit2 a déjà une bascule de +0,48 par rapport à la calibration : la tête dérive en position droite, ce qui rendrait la mesure fragile même si l'hypothèse tenait.
+
+### 2026-11-20 : rapport de la journée calculé sur le poste (C16)
+- Constat : les comptes Hugging Face gratuits n'ont plus de crédits mensuels (documentation d'Inference Providers). Le rapport par LLM n'était donc plus gratuit pour un nouvel utilisateur, et il faisait sortir des chiffres du poste.
+- Le coach ne reçoit que des chiffres : `coach.local_report` écrit le même rapport en 4 parties avec des règles, à partir des chiffres de `coach.summary`, ceux qu'on envoie au LLM. Les conseils viennent d'une table fixe (`coach.ADVICE`, `coach.GENERAL`), choisis selon les postures principales, plus un conseil de pause avant la demi-heure la plus difficile.
+- Critères C16 écrits avant le code (SPECIFICATIONS.md § 4.11) ; 7 tests (`tests/test_coach.py`, `tests/test_server.py`), 73 tests au total.
+- Interface : onglet **Rapport** ; « Générer mon rapport » sans token ; « Rédiger avec l'IA » n'apparaît qu'avec un token Hugging Face. L'API garde la même route (`POST /api/coach`, `{"source": "hf"}` pour le LLM).
+- Premier lancement sur données réelles : 22 s suivies donnaient « mieux que votre jour précédent ». Pas de comparaison sous 5 min suivies (ajout daté à C16b), et formulation corrigée pour un seul jour précédent.
+- Corrigé au passage : `test_non_json_post_is_rejected` échouait environ 1 fois sur 8. Le serveur refusait la requête avant d'en lire le corps, et Windows coupait la connexion (WinError 10053) avant que le 403 arrive. Le corps est maintenant lu en premier, plafonné à 64 Ko ; une longueur négative reçoit 413 au lieu de bloquer la lecture. 0 échec sur 30 passes.
+- **À faire** : relire et sourcer la table de conseils (rédigée sans source).
+
+### 2026-11-23 : plus de conseils, choisis d'après les chiffres (C16e modifié)
+- De 3 conseils à 3 à 5, par ordre de priorité. Nouvelles règles : travail d'au moins 2 h d'affilée presque sans pause (`coach.STREAK`, avec les heures), au moins 6 alertes par heure (`coach.ALERTS`), journée moins bonne que les précédentes (le conseil de recalibrer remonte), très bonne journée (`coach.GOOD_DAY`). Les 2e et 3e mauvaises postures ont aussi leur conseil.
+- Seuils choisis sans mesure (28 min suivies par demi-heure, 2 h, 6 alertes par heure, 90 %) : à revoir sur des journées réelles.
+- Le rapport rédigé par le LLM garde 3 conseils (consigne inchangée).
+- Carte « Aujourd'hui » enrichie : temps en mauvaise posture ; pour chaque mauvaise posture, part du temps suivi, ce que mesure la détection et durée habituelle (moyenne des jours précédents, `stats.last_days` renvoie maintenant les minutes par posture) ; détections désactivées rappelées ; meilleur et plus difficile moment (même règle que le rapport : demi-heures suivies au moins 5 min). Vérifié dans le navigateur avec des statistiques factices.
+
+### 2026-11-23 : prise en main simplifiée
+- Premier lancement : tant que le lieu n'est pas calibré, un guide en 3 étapes remplace les jauges, l'ajout d'écran et son conseil. L'étape 1 dit en direct si la tête et les épaules sont visibles, ou si les épaules sont trop bas dans l'image (`EDGE_Y`) : l'état `uncalibrated` porte maintenant `visible` et `low`.
+- Jauges : seules les détections actives sont affichées, avec les mêmes noms que les motifs (« Posture affaissée », « Penché sur le côté »…).
+- Réglages : une phrase simple par détection, sans « étape 1 / 2 » ni description géométrique ; « plus bas = plus exigeant » partout.
+- « Rétablir les réglages conseillés » (`POST /api/settings {"reset": true}`) : détections, tolérances et signalement aux valeurs par défaut ; pause, calibrations, lieux, token et lancement automatique conservés.
+- Menu de l'icône : « Ouvrir les réglages » devient « Ouvrir l'assistant » (il ouvre la page d'accueil).
+- 2 tests (`test_detector.py`, `test_server.py`) ; vérifié dans le navigateur, du premier lancement à l'état calibré.
+- Exigence **Souple / Normal / Exigeant** (Réglages → Détection) : règle les 6 tolérances d'un clic (`state.LEVELS`). Normal = valeurs par défaut ; Souple et Exigeant choisis dans les marges des essais du 2026-10-30 (cou 4° / 9° pour 2,3 à 12,3° mesurés, épaules 15 % / 40 % pour +10 à +73 %, main 2,3 / 1,6 pour 1,4 à 2,4). Un curseur déplacé affiche « Personnalisé ». Aucun nouveau réglage enregistré : la page envoie les tolérances du niveau, validées comme les autres. **Non mesuré** : la tolérance posture à 4 % (Souple) ne voit plus l'avachi que sur 61 % des images au banc ; à 2 % (Exigeant), fausses alertes au clavier probables. Test : niveaux valides, ordonnés et sur le pas des curseurs.
+- Guide plus engageant : l'image webcam s'affiche dans le guide, à côté des étapes (elle ne circule que guide affiché ; l'aperçu replié ne s'ouvre plus tout seul au premier lancement). Trait « épaules au-dessus de cette ligne » à `EDGE_Y` (75 %). Étapes à faire / en cours / faites (✓), barre de progression pendant les 3 s, bouton « Calibrer » qui pulse quand on est bien placé, puis « ✓ C'est prêt ! » 20 s. Corrigé : la page défilait seule quand le guide laissait place aux jauges (scroll anchoring de Chrome, `overflow-anchor: none`). Vérifié dans le navigateur sur un parcours simulé complet.
+
+### 2026-11-23 : interface refaite avec React et shadcn/ui
+- `frontend/` : Vite + React + TypeScript + Tailwind v4 + composants shadcn/ui (base Radix, style Nova, police Geist, icônes Lucide). Compilé en **un seul fichier** (`vite-plugin-singlefile`) écrit dans `posture/index.html` : `server.py`, l'empaquetage PyInstaller et `pyproject.toml` ne changent pas, et rien n'est chargé depuis Internet (655 Ko, dont 100 Ko de police).
+- Mêmes routes et même logique qu'avant, portées en composants : état et guide (`status-card.tsx`), lieux et aperçu (`place-cards.tsx`), journée (`day-card.tsx`), rapport (`report-view.tsx`, toujours rendu en texte, jamais en HTML : N2), réglages (`settings-view.tsx`). `confirm()` et `prompt()` remplacés par des fenêtres shadcn (AlertDialog, Dialog), les « Enregistré » par des notifications (Sonner). Thème sombre suivi en direct.
+- Le flux webcam est coupé explicitement quand l'image disparaît (`Stream`) : retirer une image MJPEG du DOM ne ferme pas toujours la connexion.
+- Le chemin du dossier utilisateur contient « & » : les raccourcis `.cmd` de `npx` / `node_modules/.bin` échouent. Les scripts npm appellent donc `node node_modules/…` directement.
+- CI Windows et macOS : `npm ci` + `npm run build` avant les tests (vérifie aussi les types) ; `build.ps1` idem. `tests/test_state.py` lit maintenant les curseurs dans `frontend/src/lib/constants.ts`.
+- Vérifié dans le navigateur (état calibré avec statistiques et historique, rapport, réglages, niveaux, notification, fenêtre d'arrêt, parcours complet du guide), sans erreur console. Pas encore vu avec une vraie webcam ni dans l'exe.
+
+### 2026-11-24 : preuves pour la soutenance
+- **Reproductibilité** : l'évaluation (`presentation/evaluation.ipynb`) rejouée avec le code actuel redonne des sorties identiques, au caractère près, à celles du 2026-11-20.
+- **Vie privée (C7), audit du code** : aucune écriture d'image ; JPEG en mémoire seulement pour l'aperçu local ; un seul appel sortant (`coach.py`, rapport par IA à la demande, chiffres agrégés) ; la page compilée ne charge rien d'Internet.
+- **Usage réel, 1 h** (`presentation/mesurer_journee.py`, résultats dans `presentation/mesures/`) : processeur moyen 1,35 % de la machine (p95 1,6 %, max 3,0 %), mémoire 310 à 315 Mo : C3 tenu sur une heure, et plus seulement sur 30 s. Hors champ vérifié (C5).
+- **Constat** : après calibration (« Maison-table-haute », posture 2,5 %, « trop près » activé), environ 100 alertes par heure, de 4 s en médiane, alerte 30 % du temps. Selon l'utilisateur, il était bien penché ou accoudé à la table haute : alertes justes (retour d'usage, sans consigne enregistrée). 3 pastilles seulement sur environ 100 liserés. À refaire au réglage Normal sur une journée.
+- **C5 en usage réel** (`presentation/mesures/journee_2026-11-24_11h59.csv`, pendant la pause de midi) : hors champ 21 min 45 s puis 18 min 39 s, aucune alerte, retour seul à « OK » ; pause 8 s et 37 s, processeur à 0,15 % ; webcam prise par l'application Caméra : « webcam indisponible » 48 s, reprise seule à sa fermeture. 2e heure de C3 : 1,11 % du processeur en moyenne, 264 Mo (page fermée).
+- **Plusieurs écrans (C6), essai court** : après l'ajout du 2e écran sur « maison-canapé » (11 h 20), 1 alerte d'1 s en 81 s, contre 3 en 32 s juste avant ; ressenti de l'utilisateur : « plutôt bien ». Preuve partielle : l'écran regardé n'était pas journalisé.
+- `SPECIFICATIONS.md` § 6.0 : bilan critère par critère, qui remplace comme référence le tableau historique « 11 critères sur 16 » (§ 6.1, anciens détecteurs). Plan de présentation : `presentation/plan_gamma.md`.
+- Rangement : `docs/` (guide d'apprentissage, spécifications Word), `mon_script.py` devenu `essais/essayer_llm.py`.
+
 ## Prochaines étapes
 
 - [ ] Tester l'app macOS sur un vrai Mac : lancement, autorisation caméra, icône de barre des menus, halo et pastille.
-- [ ] Utiliser le MVP une journée complète : gêne du halo et de la pastille, fréquence des alertes, CPU.
+- [ ] Utiliser le MVP une journée complète au réglage Normal : gêne du halo et de la pastille, fréquence des alertes (1re heure le 2026-11-24 : environ 100 alertes par heure en réglage strict). CPU : tenu sur 1 h.
 - [ ] Icône dédiée pour l'exe (actuellement l'icône PyInstaller par défaut).
 - [ ] Limites connues : écran principal seulement, position recalculée seulement au changement de coin (barre des tâches déplacée en cours de route non prise en compte).
-- [ ] Historique sur plusieurs jours ; bilan du coach proposé automatiquement en fin de journée.
-- [ ] Pistes : CI (tests + build de l'exe à chaque push), signature de l'exe (évite l'avertissement SmartScreen).
+- [x] Historique sur plusieurs jours (7 derniers jours dans la page et le rapport). Reste : bilan proposé automatiquement en fin de journée.
+- [x] CI Windows (`.github/workflows/windows.yml`) : tests et compilation de l'interface à chaque push, verte sur `develop` le 2026-11-24.
+- [ ] Piste : signature de l'exe (évite l'avertissement SmartScreen).

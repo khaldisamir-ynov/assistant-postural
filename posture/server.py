@@ -7,13 +7,17 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from posture import autostart, coach, stats
-from posture.state import change_place, state, update_settings, validate
+from posture.state import BOOLEANS, DEFAULTS, LEVELS, RANGES, change_place, state, update_settings, validate
+
+# « Rétablir les réglages conseillés » : detections et signalement ; ni la pause, ni les calibrations, ni le token
+RECOMMENDED = [k for k in (*BOOLEANS, *RANGES, "overlay_corner") if k != "enabled"]
 
 HOST, PORT = "127.0.0.1", 8765  # local uniquement : le flux webcam ne doit jamais sortir de la machine
 URL = f"http://{HOST}:{PORT}"
 INDEX_FILE = Path(__file__).with_name("index.html")
 TEST_ALERT_SECONDS = 6
 STREAM_PERIOD = 0.1
+MAX_BODY = 64 * 1024  # les requetes de la page font moins d'1 Ko
 
 _viewers_lock = threading.Lock()
 
@@ -26,7 +30,8 @@ class Server(ThreadingHTTPServer):
 def public_settings():
     # Le token ne repart jamais vers la page : on indique seulement s'il est enregistre
     settings = {k: v for k, v in state.settings.items() if k != "coach_token"}
-    return {**settings, "coach_token_set": bool(state.settings["coach_token"]), "autostart": autostart.is_enabled()}
+    return {**settings, "coach_token_set": bool(state.settings["coach_token"]), "autostart": autostart.is_enabled(),
+            "levels": LEVELS}  # la page envoie les tolerances du niveau choisi, validees comme un reglage ordinaire
 
 
 def _count_viewer(delta):
@@ -87,11 +92,19 @@ class Handler(BaseHTTPRequestHandler):
             _count_viewer(-1)
 
     def do_POST(self):
+        # Corps lu avant tout refus : sous Windows, fermer avec un corps non lu coupe la connexion et le 403 se perd
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+        except ValueError:
+            return self.send_error(400)
+        if not 0 <= length <= MAX_BODY:  # negatif : la lecture attendrait la fin de la connexion
+            return self.send_error(413)
+        body = self.rfile.read(length)
         # JSON obligatoire : impose un preflight CORS, donc un site externe ne peut pas piloter l'appli
         if not self.host_ok() or self.headers.get("Content-Type") != "application/json":
             return self.send_error(403)
         try:
-            data = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+            data = json.loads(body or b"{}")
             if not isinstance(data, dict):
                 raise ValueError
         except ValueError:
@@ -99,6 +112,11 @@ class Handler(BaseHTTPRequestHandler):
 
         if self.path == "/api/settings":
             try:
+                reset = data.pop("reset", False)
+                if not isinstance(reset, bool):
+                    raise ValueError("Reglage invalide : reset")
+                if reset:
+                    data = {**{k: DEFAULTS[k] for k in RECOMMENDED}, **data}
                 if "autostart" in data:
                     if not isinstance(data["autostart"], bool):
                         raise ValueError("Reglage invalide : autostart")
@@ -123,11 +141,16 @@ class Handler(BaseHTTPRequestHandler):
             state.test_alert_until = time.time() + TEST_ALERT_SECONDS
             self.send_json({})
         elif self.path == "/api/coach":
-            today, token = state.stats, state.settings["coach_token"]
-            if not token:
+            # Rapport calcule sur le poste par defaut ; « hf » : redige par le LLM, a la demande de l'utilisateur
+            source, today, token = data.get("source", "local"), state.stats, state.settings["coach_token"]
+            if source not in ("local", "hf"):
+                return self.send_error(400)
+            if source == "hf" and not token:
                 return self.send_json({"error": "Enregistrez d'abord votre token Hugging Face."}, 400)
             if not today or not today["good"] + today["bad"]:
                 return self.send_json({"error": "Pas encore de statistiques aujourd'hui."}, 400)
+            if source == "local":
+                return self.send_json({"advice": coach.local_report(today, stats.last_days(today))})
             try:
                 self.send_json({"advice": coach.ask(today, token, state.settings["coach_bill_to"],
                                                     stats.last_days(today))})

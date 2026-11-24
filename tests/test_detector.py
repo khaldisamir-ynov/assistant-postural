@@ -51,7 +51,9 @@ def test_disabled_check_never_alerts():
 
 def test_absent_and_uncalibrated():
     update_status(GOOD, state.settings, None, 1.0)
-    assert state.status["state"] == "uncalibrated"
+    assert state.status == {"state": "uncalibrated", "visible": True, "low": False}  # guide du premier lancement
+    update_status(None, state.settings, None, 1.0)
+    assert state.status == {"state": "uncalibrated", "visible": False, "low": False}
     update_status(None, {**state.settings, "places": {"Mon poste": [list(GOOD)]}}, 5.0, 6.0)
     assert state.status["state"] == "absent"
 

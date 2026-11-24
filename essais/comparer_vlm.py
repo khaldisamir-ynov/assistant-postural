@@ -3,7 +3,7 @@ Hugging Face si la personne tient un telephone ou boit, sur les photos de enregi
 
 ATTENTION : les photos sont envoyees aux fournisseurs du routeur HF (essai seulement, avec l'accord des personnes).
 Usage : .venv\\Scripts\\python essais\\comparer_vlm.py essais\\donnees\\AAAA-MM-JJ [--modeles a,b]
-Configuration : HF_TOKEN et HF_BILL_TO dans .env, comme mon_script.py. Reponses brutes ajoutees a vlm.jsonl.
+Configuration : HF_TOKEN et HF_BILL_TO dans .env, comme essais/essayer_llm.py. Reponses brutes ajoutees a vlm.jsonl.
 """
 import base64
 import json

@@ -1,6 +1,6 @@
 # Spécifications, critères de réussite, essais et démo
 
-Assistant de posture, version 1.0.0 (MVP). Document de référence **avant toute nouvelle modification** : chaque amélioration doit dire quel critère elle vise, et se vérifier avec le protocole décrit ici.
+Assistant de posture, version 1.1.0. Document de référence **avant toute nouvelle modification** : chaque amélioration doit dire quel critère elle vise, et se vérifier avec le protocole décrit ici.
 
 Historique et choix techniques : [SUIVI_DEVELOPPEMENT.md](SUIVI_DEVELOPPEMENT.md). Utilisation : [README.md](README.md).
 
@@ -37,7 +37,7 @@ Historique et choix techniques : [SUIVI_DEVELOPPEMENT.md](SUIVI_DEVELOPPEMENT.md
 | **F7** | **Plusieurs écrans** : jusqu'à 4 références par lieu (« Ajouter un écran »). La posture est jugée par rapport à la référence la plus proche. |
 | F8 | Hors champ (tête ou épaules invisibles) : aucune alerte. Webcam prise par une autre application : nouvel essai toutes les 2 s. **Pause** : la webcam est libérée. |
 | F9 | **Statistiques du jour** : temps en bonne posture, temps suivi, nombre d'alertes, motif principal. Remises à zéro chaque jour. |
-| F10 | **Coach IA** (facultatif) : un LLM Hugging Face rédige un rapport de journée (bilan, postures à surveiller, moments de la journée, 3 conseils) à partir des statistiques du jour et des 7 derniers jours, avec le token de l'utilisateur. |
+| F10 | **Rapport de la journée** (bilan, postures à surveiller, moments de la journée, 3 à 5 conseils), à partir des statistiques du jour et des 7 derniers jours. Par défaut, il est **calculé sur l'ordinateur** (règles et table de conseils), sans réseau ni token (critères C16, § 4.11). En option, un LLM Hugging Face le rédige, avec le token de l'utilisateur et à sa demande. |
 | F11 | Interface de configuration locale (http://127.0.0.1:8765) : état, jauges en direct, réglages, test du signalement, aperçu webcam repliable. |
 | F12 | Fonctionnement en arrière-plan : icône de notification (Windows) ou de barre des menus (Mac), lancement à l'ouverture de session, une seule instance. |
 | **F13** *(prévue)* | **Webcam déplacée sans recalibrage** : quand l'ordinateur est incliné, tourné ou déplacé, l'assistant mesure le décalage du décor et l'applique à la posture de référence. **Aucune action de l'utilisateur.** Si la compensation est impossible (décor méconnaissable, trop peu de repères), les alertes sont suspendues plutôt que fausses. |
@@ -48,7 +48,7 @@ Historique et choix techniques : [SUIVI_DEVELOPPEMENT.md](SUIVI_DEVELOPPEMENT.md
 
 | ID | Exigence |
 |----|----------|
-| **N1 Vie privée** | Aucune image n'est enregistrée ni envoyée. Seul le coach (s'il est activé) envoie des **chiffres agrégés** à Hugging Face. L'empreinte du décor (F13, F14) n'est pas une image : des coordonnées de points et des codes binaires, qui restent sur l'ordinateur. |
+| **N1 Vie privée** | Aucune image n'est enregistrée ni envoyée. Seul le rapport rédigé par l'IA, **à la demande** de l'utilisateur, envoie des **chiffres agrégés** à Hugging Face. Le rapport par défaut ne sort pas du poste. L'empreinte du décor (F13, F14) n'est pas une image : des coordonnées de points et des codes binaires, qui restent sur l'ordinateur. |
 | N2 Sécurité | Serveur sur `127.0.0.1` uniquement ; en-tête `Host` contrôlé (anti DNS rebinding) ; `POST` JSON obligatoire ; chaque réglage validé et borné ; le token n'est jamais renvoyé à la page ; la réponse du LLM est affichée comme du texte, jamais comme du HTML. |
 | N3 Performance | 10 images/s analysées ; au plus 5 % du processeur de la machine en moyenne et 500 Mo de mémoire. |
 | N4 Robustesse | La détection redémarre seule après une erreur. Un fichier de réglages ou de statistiques abîmé n'empêche pas le démarrage et ne fait pas perdre les calibrations valides. |
@@ -239,6 +239,40 @@ Aucun modèle ne réussit les 3 vidéos : **C14 non atteint, piste écartée.** 
 
 Les paires valables sont classées par marge (écart entre la pire mauvaise posture et la pire bonne posture), en unités de bruit. La paire proposée par défaut doit avoir une marge **au moins égale** à celle de la mesure actuelle (haut de la tête → épaules). Sinon, la mesure actuelle reste par défaut.
 
+### 4.10 Avachi ou clavier : bascule de la tête (C15), ajoutés le 2026-11-20 avant l'essai
+
+Constat (§ 6.6) : quand on s'avachit, les épaules descendent dans l'image, mais elles descendent aussi quand on regarde le clavier, d'où le retrait de la détection « épaules ». Différence attendue : au clavier, la tête **bascule** (le nez descend par rapport aux oreilles) ; quand on s'avachit, le haut du corps descend **sans** basculer, ou en relevant le menton pour garder l'écran en vue. C'est la piste « épaules qui descendent sans bascule de la tête » (§ 8, priorité 1 bis).
+
+**Mesures**, par rapport à la calibration (médiane de « droit » entre 4 et 7 s) :
+- descente des épaules, en largeurs d'épaules (celle de l'ancienne détection « épaules ») ;
+- bascule : (y du nez − y du milieu des oreilles) ÷ écart des yeux, en écart signé à la calibration (positif = nez qui descend).
+
+**Règle** : avachi si descente > *s* **et** bascule < *b*.
+
+**Jeu** : les 4 enregistrements de bureau (2026-10-30, 2026-11-13 A, B, C), image par image, sans les 2 premières secondes de chaque posture (comme les autres sondes). Outil : `essais/sonde_bascule.py`, sur une grille de *s* (2 à 10 %) et de *b* (−0,5 à +0,6 écart d'yeux).
+
+| ID | Critère |
+|----|---------|
+| C15a | Il existe **un seul couple** (*s*, *b*) auquel avache est signalé sur ≥ 90 % des images, et droit, droit2 et clavier sur ≤ 10 %, **dans chacun des 4 enregistrements** |
+| C15b | Pour ne pas juger sur les données qui ont servi à choisir : pour chaque enregistrement, le couple choisi sur les 3 autres (celui qui a la plus grande marge) remplit les mêmes seuils sur celui-là |
+
+Si C15 est atteint, la règle entre comme option désactivée par défaut, puis elle est confirmée sur un **nouvel** enregistrement de bureau en continu (`rejouer.py`). Sinon, la piste est écartée, et le résultat est noté au § 6.3.
+
+### 4.11 Rapport calculé sur le poste (C16), ajoutés le 2026-11-20 avant le code
+
+Constat : le coach ne reçoit que des chiffres. Les comptes Hugging Face gratuits n'ont plus de crédits mensuels : le rapport par LLM n'est donc plus gratuit, et il fait sortir des chiffres du poste. Le rapport par défaut est calculé par des règles, à partir des **mêmes chiffres** que ceux envoyés au LLM (`coach.summary`).
+
+| ID | Critère |
+|----|---------|
+| C16a | Les 4 parties du rapport par LLM, dans cet ordre : Bilan, Postures à surveiller, Moments de la journée, Conseils. Même format (titres « ## », puces « - ») : la page les met en forme sans changement |
+| C16b | Chaque nombre du rapport vient des statistiques. **Bilan** : temps suivi, % en bonne posture, nombre d'alertes. S'il y a des jours précédents, il ajoute leur moyenne de bonne posture : « mieux » ou « moins bien » à partir de 3 points d'écart, « comparable » en dessous. *Ajout du 2026-11-20, après le premier lancement (22 s suivies, « mieux que les jours précédents ») : pas de comparaison sous 5 min suivies, le seuil déjà appliqué aux demi-heures* |
+| C16c | **Postures à surveiller** : chaque mauvaise posture d'au moins 1 min (comme la page), de la plus longue à la plus courte, avec sa durée et sa part du temps suivi. Sinon, une phrase le dit |
+| C16d | **Moments** : seulement les demi-heures suivies au moins 5 min (comme pour le LLM). La meilleure et la plus difficile, à égalité la plus tôt. Avec une seule demi-heure, elle seule. Sans aucune, une phrase le dit |
+| C16e | **Conseils** : de 3 à 5, sans doublon, pris dans une table fixe relue par l'utilisateur, où seules les heures, durées et nombres viennent du jour. *Modifié le 2026-11-23 (au lieu de « exactement 3 ») :* choisis d'après les chiffres, par ordre de priorité : la mauvaise posture principale ; au moins 2 h d'affilée presque sans pause (chaque demi-heure suivie au moins 28 min), avec les heures ; une pause avant la demi-heure la plus difficile ; les 2e et 3e mauvaises postures ; au moins 6 alertes par heure (sur au moins 30 min suivies) ; une journée moins bonne que les précédentes (recalibrer) ; le 2e conseil de la posture principale. Très bonne journée (au moins 90 %, aucune mauvaise posture d'une minute, au moins 5 min suivies) : conseil de continuer, en tête. Moins de 3 conseils : complétés par les conseils généraux |
+| C16f | Même statistiques, même texte. Aucun appel réseau, aucun token |
+
+Vérification : tests automatiques (`tests/test_coach.py`), puis l'essai manuel « Rapport » du § 5.3.
+
 ---
 
 ## 5. Comment faire les essais
@@ -280,7 +314,7 @@ Les deux scripts sont des outils de mesure, pas des tests unitaires. Les tests a
 | Écrans multiples (C6) | Calibrer face à l'écran 1 ; se tourner vers l'écran 2, « Ajouter un écran » ; alterner 1 min | Pas d'alerte ; la page indique « écran 1 / écran 2 » |
 | Lieux | Créer « Maison », calibrer, revenir à « Bureau » par le menu de l'icône | Chaque lieu garde ses calibrations |
 | Hors champ / pause / webcam occupée (C5) | Sortir du champ ; Pause ; ouvrir l'application Caméra | Gris, sans alerte ; reprise seule à la fermeture de l'application Caméra |
-| Coach | Après quelques minutes suivies : onglet **Rapport IA** → « Générer mon rapport » | Rapport en 4 parties, ou un message clair si le token est absent ou invalide |
+| Rapport | Après quelques minutes suivies : onglet **Rapport** → « Générer mon rapport », sans token ; puis « Rédiger avec l'IA » avec un token | Rapport en 4 parties dans les deux cas ; pour l'IA, un message clair si le token est absent, invalide ou sans crédits |
 | Performance (C3) | Assistant actif 30 s, mesurer le temps processeur du processus | ≤ 5 % de la machine, ≤ 500 Mo |
 
 ### 5.4 Essai « webcam déplacée » (C8)
@@ -376,7 +410,29 @@ Le jeu généré reste sur le disque (`essais/donnees/genere/`, exclu de git) : 
 
 ## 6. Résultats
 
-### 6.1 Banc d'essai du 2026-10-30
+### 6.0 Bilan au 2026-11-24 (état actuel, référence pour la soutenance)
+
+Réglages par défaut de la version actuelle (posture affaissée 3 %, penché 6°). Les § 6.1 et 6.2 sont l'historique du 2026-10-30, avec des détecteurs retirés depuis.
+
+| Critère | Preuve | Résultat | Statut |
+|---|---|---|---|
+| C1 « alerte » : bonne posture sans alerte | `presentation/evaluation.ipynb` § 2, 4 séances de bureau | **0 fausse alerte sur 12 épisodes** (droit, droit2, clavier) | ✅ |
+| C2 « alerte » : mauvaise posture alertée | même source | **10 sur 12** ; ratés : l'avachi, séances A et B | 🟡 |
+| C1 / C2 « images » | notebook § 1, 6 836 images | précision 94 %, rappel 80 %, F1 0,86, fausses alertes 5,2 % ; aucun seuil ne sépare l'avachi dans A et B (notebook § 3) | 🟡 |
+| C3 Performance | `presentation/mesures/journee_2026-11-24_10h54.csv` : **1 h d'usage réel**, échantillon toutes les 5 s | processeur moyen **1,35 %** de la machine (p95 1,6 %, max 3,0 %), mémoire 310 à 315 Mo ; 2e heure (`…_11h59.csv`, page fermée) : 1,11 % (max 1,6 %), 264 Mo | ✅ |
+| C4 Tests | `pytest`, CI Windows sur `develop` | 76 réussis, 1 ignoré (Mac) ; CI verte | ✅ |
+| C5 Hors champ / pause / webcam occupée | `presentation/mesures/journee_2026-11-24_11h59.csv` (état chaque seconde) | hors champ 21 min 45 s puis 18 min 39 s, **aucune alerte**, retour seul à « OK » ; pause (8 s, 37 s) : processeur à 0,15 %, webcam libérée ; webcam prise par l'application Caméra : « webcam indisponible » 48 s sans alerte, **reprise seule** à sa fermeture | ✅ |
+| C6 Écrans multiples | tests automatiques ; journal du 2026-11-24 | essai court : après l'ajout du 2e écran, 1 alerte d'1 s en 81 s (contre 3 en 32 s juste avant), ressenti « plutôt bien » ; l'écran regardé n'était pas journalisé | 🟡 partiel |
+| C7 Vie privée | audit du code du 2026-11-24 | aucune écriture d'image ; JPEG en mémoire seulement pour l'aperçu local (`127.0.0.1`) ; un seul appel sortant (`coach.py`, rapport par IA à la demande, chiffres agrégés) ; la page ne charge rien d'Internet ; dossier de réglages : 4 fichiers texte | ✅ |
+| C11 Choix du modèle | § 6.6 | aucun VLM ni LLM ne fait mieux que MediaPipe | ✅ |
+| C16 Rapport local | `tests/test_coach.py` | déterministe, sans réseau | ✅ |
+| Reproductibilité | réexécution du notebook le 2026-11-24, code actuel | sorties **identiques** à celles du 2026-11-20 | ✅ |
+
+**Première heure d'usage réel** (même journal, 2026-11-24, lieu « Maison-table-haute », réglages plus stricts que les défauts : posture 2,5 %, « trop près » activé). Sur les 33 min qui suivent la calibration : état OK 56 % du temps, alerte 30 % ; 56 alertes (environ 100 par heure), de 4 s en médiane, dont 3 assez longues pour la pastille. Retour de l'utilisateur : il était effectivement penché ou accoudé à la table haute, les alertes correspondaient donc à sa posture (retour d'usage, pas une vérité terrain enregistrée avec consigne). L'escalade a joué son rôle : sur environ 100 liserés de quelques secondes, 3 seulement sont devenus une pastille. Reste à valider qu'à ce rythme l'outil reste supportable sur une journée, au réglage Normal.
+
+### 6.1 Banc d'essai du 2026-10-30 (historique)
+
+*Historique : détecteurs de l'époque (épaules, tête), avant la démarche étape par étape. Le bilan actuel est au § 6.0.*
 
 Une personne, une séance, Windows 11, webcam intégrée, réglages par défaut (épaules 5 %, tête 5 %, inclinaison 10 %, distance 25 %, main 2,0, délai 2 s). Environ 360 images par posture.
 
@@ -429,6 +485,7 @@ Les cas **téléphone** et **boisson** déclenchent « tête en avant ». La gé
 | Détection « épaules affaissées » activée (slouch) | Avachi vu dans 1 séance sur 3, mais clavier signalé (56 % et 99 %). Épaules qui se resserrent ou avancent en profondeur (z) : pas mieux (`essais/sonde_epaules.py`) | **Retirée** (2026-11-13) |
 | Repères suivis sur le buste, ligne front → buste (C13) | Points perdus au premier changement de posture (t-shirt uni) : 24 % des images mesurables | Écartée sous cette forme ; essai avec gommettes prêt, non enregistré |
 | Vidéos générées (Wan2.1, Wan2.2, LTX-2) au lieu de photos (C14) | Caméra qui zoome, personne qui change, avachis caricaturaux (> 100 % de raccourcissement, contre 2 à 4 % en vrai) | Écartée |
+| Avachi = épaules qui descendent sans bascule de la tête (C15, 2026-11-20) | La tête bascule autant ou plus en s'avachissant qu'au clavier, dans les 4 séances (bascule médiane +0,04 à +0,55 écart d'yeux contre −0,04 à +0,46) ; aucun couple de seuils commun, aucun couple choisi sur 3 séances ne passe la 4e (`essais/sonde_bascule.py`) | Écartée |
 
 ### 6.4 Webcam déplacée (C8), essai n° 1 du 2026-10-30
 
@@ -520,7 +577,7 @@ Toutes les réponses ont été demandées 2 fois (température 0). Détail : `es
 - **Coût et confidentialité** : à une analyse toutes les 5 s, les modèles du routeur coûtent de 0,02 à 0,24 $ par heure, soit 0,2 à 2 $ par journée de travail et par personne. Ils font sortir une photo (B, C, E) ou des repères (D) toutes les 5 s, ce que C7 interdit par défaut. Leur latence (p95 jusqu'à 5,5 s) dépend du réseau et du fournisseur. MediaPipe tourne en local, hors ligne, en 0,06 s, gratuitement.
 - **MediaPipe photo par photo (32 % de fausses alertes) n'est pas l'application.** L'application lisse sur 1 s, attend 2 s avant d'alerter et se calibre sur 3 s, pas sur une seule photo. Au banc en continu, l'enregistrement C ne donne aucune alerte en bonne posture (§ ci-dessous). La comparaison reste équitable, puisque toutes les approches voient les mêmes photos, avec la même référence.
 
-**Décision : MediaPipe est gardé seul pour la détection.** Les VLM et LLM sont écartés pour la posture (§ 6.3). Le LLM reste utile pour ce qu'il fait déjà : le bilan du coach, à partir de 8 chiffres.
+**Décision : MediaPipe est gardé seul pour la détection.** Les VLM et LLM sont écartés pour la posture (§ 6.3). Le LLM reste utile pour ce qu'il fait déjà : rédiger le bilan du coach à partir de chiffres, en option depuis le 2026-11-20 (§ 4.11).
 
 **Limites** : une seule personne, deux séances, 6 photos par posture. Les intervalles de confiance sont larges (± 15 points) : une différence de quelques photos ne veut rien dire.
 
@@ -547,7 +604,7 @@ Point faible confirmé : **l'avachi**. Sur 3 des 4 séances, la hauteur tête-é
 - assistant lancé ;
 - page http://127.0.0.1:8765 ouverte, avec l'aperçu webcam déplié ;
 - cadrage vérifié (épaules au-dessus des trois quarts de l'image) ;
-- token du coach enregistré ;
+- token Hugging Face enregistré (pour la version rédigée par l'IA) ;
 - quelques minutes de suivi déjà accumulées, pour que les statistiques et le coach aient de la matière.
 
 | # | Action | Ce qu'on montre | Message |
@@ -559,12 +616,12 @@ Point faible confirmé : **l'avachi**. Sur 3 des 4 séances, la hauteur tête-é
 | 5 | Se pencher sur le côté, puis menton dans la main, puis se rapprocher de l'écran | Les motifs « Penché », « Tête appuyée sur la main », « Trop près » | Les 5 détections |
 | 6 | Se tourner vers le 2e écran (déjà ajouté) | Pas d'alerte, « écran 2 » | Écrans multiples |
 | 7 | Menu de l'icône → **Lieu de travail** → Maison | Changement de lieu en un clic | Pas de recalibration à chaque changement d'endroit |
-| 8 | Onglet **Rapport IA** → **Générer mon rapport** | Rapport de journée de Qwen (Hugging Face) : bilan, postures, moments, conseils | Seuls 8 chiffres sont envoyés au LLM |
-| 9 | Montrer le tableau du § 6 | 11 critères sur 16, les échecs expliqués | La démarche : mesurer, décider, puis vérifier |
+| 8 | Onglet **Rapport** → **Générer mon rapport**, puis **Rédiger avec l'IA** | Le même rapport en 4 parties : calculé sur le poste, puis rédigé par Qwen (Hugging Face) | Par défaut rien ne sort ; l'IA ne reçoit que des chiffres, à la demande |
+| 9 | Montrer le bilan du § 6.0 | 0 fausse alerte sur 12 épisodes, 10 mauvaises postures sur 12, l'avachi expliqué | La démarche : mesurer, décider, puis vérifier |
 
 **En cas de problème pendant la démo** :
 - le signalement ne se déclenche pas → bouton « Tester le signalement » ;
-- le coach est indisponible (réseau) → montrer le message d'erreur clair, puis la sortie de `mon_script.py` enregistrée à l'avance ;
+- l'IA est indisponible (réseau, crédits) → montrer le message d'erreur clair, puis le rapport calculé sur le poste, qui ne dépend pas du réseau ;
 - la webcam est occupée → fermer Teams ou Zoom : l'assistant reprend seul.
 
 ---
@@ -577,6 +634,6 @@ Point faible confirmé : **l'avachi**. Sur 3 des 4 séances, la hauteur tête-é
 | 1 | Regard vers le clavier. **Cause trouvée le 2026-11-06** : les 15 % d'images signalées sont toutes dans les transitions (1,3 s au début, en sortant de « tête en avant » ; 0,5 s à la fin). Le reste de la posture, environ 10 s, n'a aucune image signalée, et il n'y a aucune alerte. Correction du protocole, sans toucher aux critères ni à la détection : préparation portée de 4 à 6 s dans `enregistrer.py`. À confirmer avec l'enregistrement du § 5.5 | C1 clavier |
 | 2 | Dérive naturelle : référence qui suit lentement l'utilisateur quand il est droit, ou tolérance épaules adaptée au bruit mesuré pendant la calibration | C1 images |
 | 3 | Essais réels des écrans multiples et revérification de C5 en 0.4.0 | C5, C6 |
-| 1 bis | **Avachi** : seule mauvaise posture encore ratée (0 % dans 2 séances sur 4). Prochain essai : gommettes sur le buste (`enregistrer.py --gommettes`, C13), ou mesure combinée « épaules qui descendent sans bascule de la tête », à fixer avant l'essai et à valider sur un nouvel enregistrement | C2 avachi |
+| 1 bis | **Avachi** : seule mauvaise posture encore ratée (0 % dans 2 séances sur 4). Mesure combinée « épaules qui descendent sans bascule de la tête » écartée (C15, 2026-11-20 : la tête bascule aussi en s'avachissant). Reste : gommettes sur le buste (`enregistrer.py --gommettes`, C13) | C2 avachi |
 | 4 | ~~Téléphone et boisson par VLM~~ : C9 non atteint sur photos réelles, piste écartée (§ 6.3). Reste possible : détection de mains avec MediaPipe Hands si elles sont dans le champ. **Pas de VLM local** (décision du 2026-11-06) | C9 (§ 4.4) |
 | 5 | Essais sur d'autres personnes et d'autres webcams (les seuils actuels viennent d'une seule personne) | Validité de C1 et C2 |
